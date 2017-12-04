@@ -39,9 +39,9 @@ contract DWorldMinting is DWorldToken {
             uint256 _tokenId = _tokenIds[i];
             require(validIdentifier(_tokenId));
             
-            // The plot be unowned (a plot token cannot be transferred to 0x0,
-            // so once a plot is claimed it will always be owned by a non-zero
-            // address).
+            // The plot must be unowned (a plot token cannot be transferred to
+            // 0x0, so once a plot is claimed it will always be owned by a
+            // non-zero address).
             require(identifierToOwner[_tokenId] == address(0));
             
             // Create the plot and associate it with the plot identifier
