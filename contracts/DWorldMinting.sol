@@ -46,7 +46,7 @@ contract DWorldMinting is DWorldToken {
             
             // Create the plot and associate it with the plot identifier
             identifierToPlot[_tokenId].mintedTimestamp = now;
-            plots[offset + i] = _tokenId;
+            plots[offset + i] = uint40(_tokenId);
             
             // Transfer the new plot to the sender.
             _transfer(address(0), msg.sender, _tokenId);
