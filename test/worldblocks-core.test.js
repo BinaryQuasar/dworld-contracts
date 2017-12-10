@@ -352,4 +352,55 @@ contract("DWorldCore", function(accounts) {
             assert.deepEqual((await core.unclaimedPlotPrice()).toNumber(), newPrice.toNumber());
         });
     });
+    
+    describe("Pausing", function() {
+        before(deployContract);
+        before(mintTokens);
+        before(async function approveTransfer() {
+            await core.approve(user2, plotB, {from: user1});
+        });
+        
+        it("should prevent non-owners from pausing", async function() {
+            await utils.assertRevert(core.pause({from: cfo}));
+            await utils.assertRevert(core.pause({from: user1}));
+        });
+        
+        it("allows the owner to pause", async function() { 
+            await core.pause({from: owner});
+        });
+        
+        it("should prevent minting, transferring, etc., when paused", async function() {
+            await utils.assertRevert(core.approve(user2, plotA, {from: user1}));
+            await utils.assertRevert(core.approveMultiple(user2, [plotA], {from: user1}));
+            await utils.assertRevert(core.transfer(user2, plotA, {from: user1}));
+            await utils.assertRevert(core.transferMultiple(user2, [plotA], {from: user1}));
+            await utils.assertRevert(core.takeOwnership(plotB, {from: user2}));
+            await utils.assertRevert(core.takeOwnershipMultiple([plotB], {from: user2}));
+            
+            await utils.assertRevert(core.claimPlot(0, {from: user1, value: unclaimedPlotPrice}));
+            await utils.assertRevert(core.claimPlotMultiple([0], {from: user1, value: unclaimedPlotPrice}));
+            
+            await utils.assertRevert(core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1}));
+            await utils.assertRevert(core.setPlotDataMultiple([plotA], "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1}));
+        });
+        
+        it("should prevent non-owners from unpausing", async function() {
+            await utils.assertRevert(core.unpause({from: cfo}));
+            await utils.assertRevert(core.unpause({from: user1}));
+        });
+        
+        it("allows the owner to unpause", async function() {
+            await core.unpause({from: owner});
+        });
+        
+        it("allows minting, transferring, etc., after unpausing", async function() {
+            await core.approve(user2, plotA, {from: user1});
+            await core.transfer(user2, plotA, {from: user1});
+            await core.takeOwnership(plotB, {from: user2});
+            
+            await core.claimPlot(0, {from: user1, value: unclaimedPlotPrice});
+            
+            await core.setPlotData(plotC, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1});
+        });
+    });
 });
