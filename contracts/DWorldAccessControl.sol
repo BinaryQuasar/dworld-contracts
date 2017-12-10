@@ -1,8 +1,9 @@
 pragma solidity ^0.4.18;
 
 import "zeppelin-solidity/contracts/ownership/Claimable.sol";
+import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
-contract DWorldAccessControl is Claimable {
+contract DWorldAccessControl is Claimable, Pausable {
     address public cfoAddress;
 
     function DWorldAccessControl() public {

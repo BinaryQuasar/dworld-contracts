@@ -13,7 +13,7 @@ contract DWorldMinting is DWorldToken {
     
     /// @notice Buy an unclaimed plot.
     /// @param _tokenId The unclaimed plot to buy.
-    function claimPlot(uint256 _tokenId) external payable {
+    function claimPlot(uint256 _tokenId) external payable whenNotPaused {
         uint256[] memory _tokenIds = new uint256[](1);
         _tokenIds[0] = _tokenId;
         
@@ -22,7 +22,7 @@ contract DWorldMinting is DWorldToken {
     
     /// @notice Buy unclaimed plots.
     /// @param _tokenIds The unclaimed plots to buy.
-    function claimPlotMultiple(uint256[] _tokenIds) public payable {
+    function claimPlotMultiple(uint256[] _tokenIds) public payable whenNotPaused {
         uint256 etherRequired = unclaimedPlotPrice * _tokenIds.length;
         
         // Ensure enough ether is supplied.

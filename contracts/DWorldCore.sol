@@ -2,9 +2,12 @@ pragma solidity ^0.4.18;
 
 import "./DWorldAuction.sol";
 
-contract DWorldCore is DWorldAuction {
+contract DWorldCore is DWorldAuction {    
     /// @notice Set the data associated with a plot.
-    function setPlotData(uint256 _tokenId, string name, string description, string imageUrl, string infoUrl) public {
+    function setPlotData(uint256 _tokenId, string name, string description, string imageUrl, string infoUrl)
+        public
+        whenNotPaused
+    {
         // The sender requesting the data update should be the owner
         require(_owns(msg.sender, _tokenId));
     
@@ -16,7 +19,10 @@ contract DWorldCore is DWorldAuction {
     }
     
     /// @notice Set the data associated with multiple plots.
-    function setPlotDataMultiple(uint256[] _tokenIds, string name, string description, string imageUrl, string infoUrl) public {
+    function setPlotDataMultiple(uint256[] _tokenIds, string name, string description, string imageUrl, string infoUrl)
+        public
+        whenNotPaused
+    {
         for (uint256 i = 0; i < _tokenIds.length; i++) {
             uint256 _tokenId = _tokenIds[i];
         

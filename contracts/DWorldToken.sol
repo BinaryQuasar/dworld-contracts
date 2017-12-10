@@ -68,7 +68,7 @@ contract DWorldToken is DWorldBase, ERC721 {
     /// @param _to The address to approve taking owernship.
     /// @param _tokenId The token identifier to give approval for.
     /// @dev Required for ERC-721 compliance.
-    function approve(address _to, uint256 _tokenId) external {
+    function approve(address _to, uint256 _tokenId) external whenNotPaused {
         uint256[] memory _tokenIds = new uint256[](1);
         _tokenIds[0] = _tokenId;
         
@@ -78,7 +78,7 @@ contract DWorldToken is DWorldBase, ERC721 {
     /// @notice Approve a given address to take ownership of multiple tokens.
     /// @param _to The address to approve taking ownership.
     /// @param _tokenIds The token identifiers to give approval for.
-    function approveMultiple(address _to, uint256[] _tokenIds) public {
+    function approveMultiple(address _to, uint256[] _tokenIds) public whenNotPaused {
         for (uint256 i = 0; i < _tokenIds.length; i++) {
             uint256 _tokenId = _tokenIds[i];
             
@@ -99,7 +99,7 @@ contract DWorldToken is DWorldBase, ERC721 {
     /// @param _to The address of the recipient, can be a user or contract.
     /// @param _tokenId The identifier of the plot to transfer.
     /// @dev Required for ERC-721 compliance.
-    function transfer(address _to, uint256 _tokenId) external {
+    function transfer(address _to, uint256 _tokenId) external whenNotPaused {
         uint256[] memory _tokenIds = new uint256[](1);
         _tokenIds[0] = _tokenId;
         
@@ -111,7 +111,7 @@ contract DWorldToken is DWorldBase, ERC721 {
     /// or your plots may be lost forever.
     /// @param _to The address of the recipient, can be a user or contract.
     /// @param _tokenIds The identifiers of the plots to transfer.
-    function transferMultiple(address _to, uint256[] _tokenIds) public {
+    function transferMultiple(address _to, uint256[] _tokenIds) public whenNotPaused {
         for (uint256 i = 0; i < _tokenIds.length; i++) {
             uint256 _tokenId = _tokenIds[i];
         
@@ -133,7 +133,7 @@ contract DWorldToken is DWorldBase, ERC721 {
     /// address has previously been granted transfer approval by the owner.
     /// @param _tokenId The identifier of the plot to be transferred.
     /// @dev Required for ERC-721 compliance.
-    function takeOwnership(uint256 _tokenId) external {
+    function takeOwnership(uint256 _tokenId) external whenNotPaused {
         uint256[] memory _tokenIds = new uint256[](1);
         _tokenIds[0] = _tokenId;
         
@@ -143,7 +143,7 @@ contract DWorldToken is DWorldBase, ERC721 {
     /// @notice Transfer multiple plots owned by another address, for which the
     /// calling address has previously been granted transfer approval by the owner.
     /// @param _tokenIds The identifier of the plot to be transferred.
-    function takeOwnershipMultiple(uint256[] _tokenIds) public {
+    function takeOwnershipMultiple(uint256[] _tokenIds) public whenNotPaused {
         for (uint256 i = 0; i < _tokenIds.length; i++) {
             uint256 _tokenId = _tokenIds[i];
             address _from = identifierToOwner[_tokenId];
