@@ -10,23 +10,14 @@ contract DWorldToken is DWorldBase, ERC721 {
     string public constant symbol = "DWP";
     
     /// @dev Interface signature for ERC-165
-    bytes4 constant InterfaceSignature_ERC165 =
+    bytes4 constant INTERFACE_SIGNATURE_ERC165 =
         bytes4(keccak256('supportsInterface(bytes4)'));
-    
-    /// @dev (High-level) interface signature for ERC-165
-    bytes4 constant InterfaceSignature_ERC721 =
-        bytes4(keccak256('totalSupply()')) ^
-        bytes4(keccak256('balanceOf(address)')) ^
-        bytes4(keccak256('ownerOf(uint256)')) ^
-        bytes4(keccak256('approve(address,uint256)')) ^
-        bytes4(keccak256('takeOwnership(uint256)')) ^
-        bytes4(keccak256('transfer(address,uint256)'));
     
     /// @notice Introspection interface as per ERC-165 (https://github.com/ethereum/EIPs/issues/165).
     /// Returns true for any standardized interfaces implemented by this contract.
     /// (ERC-165 and ERC-721.)
     function supportsInterface(bytes4 _interfaceID) external view returns (bool) {
-        return ((_interfaceID == InterfaceSignature_ERC165) || (_interfaceID == InterfaceSignature_ERC721));
+        return ((_interfaceID == INTERFACE_SIGNATURE_ERC165) || (_interfaceID == INTERFACE_SIGNATURE_ERC721));
     }
     
     /// @dev Checks if a given address owns a particular plot.
