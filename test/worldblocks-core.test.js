@@ -403,4 +403,27 @@ contract("DWorldCore", function(accounts) {
             await core.setPlotData(plotC, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1});
         });
     });
+    
+    describe("Upgrading", function() {
+        before(deployContract);
+        
+        it("should not be marked as upgraded by default", async function() {
+            assert.equal(await core.upgradedContractAddress(), 0);
+        });
+        
+        it("should prevent upgrading the contract when it is not paused", async function() {
+            await utils.assertRevert(core.setUpgradedContractAddress(0x42, {from: owner}));
+            await utils.assertRevert(core.setUpgradedContractAddress(0x42, {from: user1}));
+        });
+        
+        it("should prevent non-owners from upgrading the contract (even when paused)", async function() {
+            await core.pause({from: owner});
+            await utils.assertRevert(core.setUpgradedContractAddress(0x42, {from: user1}));
+        });
+        
+        it("should allow the owner to upgrade the contract when paused", async function() {
+            await core.setUpgradedContractAddress(0x42, {from: owner});
+            assert.equal(await core.upgradedContractAddress(), 0x42);
+        });
+    });
 });
