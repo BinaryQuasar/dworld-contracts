@@ -2,7 +2,18 @@ pragma solidity ^0.4.18;
 
 import "./DWorldAuction.sol";
 
-contract DWorldCore is DWorldAuction {    
+contract DWorldCore is DWorldAuction {
+    /// If this contract is broken, this will be used to publish the address at which an upgraded contract can be found
+    address public upgradedContractAddress;
+    event ContractUpgrade(address upgradedContractAddress);
+
+    /// @notice Only to be used when this contract is significantly broken,
+    /// and an upgrade is required.
+    function setUpgradedContractAddress(address _upgradedContractAddress) public onlyOwner whenPaused {
+        upgradedContractAddress = _upgradedContractAddress;
+        ContractUpgrade(_upgradedContractAddress);
+    }
+
     /// @notice Set the data associated with a plot.
     function setPlotData(uint256 _tokenId, string name, string description, string imageUrl, string infoUrl)
         public
