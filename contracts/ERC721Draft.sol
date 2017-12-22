@@ -2,8 +2,8 @@ pragma solidity ^0.4.18;
 
 /// @title Interface for contracts conforming to ERC-721: Non-Fungible Tokens
 contract ERC721 {
-    // Interface signature for ERC-165
-    bytes4 constant INTERFACE_SIGNATURE_ERC721 = // 0xa9059cbb
+    // Interface signature for ERC-165 (evaluates to 0x19595b11)
+    bytes4 constant INTERFACE_SIGNATURE_ERC721 =
         bytes4(keccak256('totalSupply()')) ^
         bytes4(keccak256('balanceOf(address)')) ^
         bytes4(keccak256('ownerOf(uint256)')) ^

@@ -71,6 +71,12 @@ contract("DWorldCore", function(accounts) {
             assert.equal(coord3[0], 131071);
             assert.equal(coord3[1], 131071);
         });
+        
+        it("correctly identifies interface signatures", async function() {
+            assert.equal(await core.supportsInterface("0x01ffc9a7"), true); // ERC-165
+            assert.equal(await core.supportsInterface("0x19595b11"), true); // ERC-721
+            assert.equal(await core.supportsInterface("0xbaaaaaad"), false); // Something unsupported
+        });
     });
     
         /*
