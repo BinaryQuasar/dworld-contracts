@@ -20,8 +20,8 @@ contract ERC721 {
     function transfer(address to, uint256 tokenId) external;
 
     // Events
-    event Transfer(address indexed from, address indexed to, uint256 tokenId);
-    event Approval(address indexed owner, address indexed approved, uint256 tokenId);
+    event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
+    event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
 
     // Optional
     // function name() external view returns (string _name);
