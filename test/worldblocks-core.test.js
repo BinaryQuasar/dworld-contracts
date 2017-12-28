@@ -249,8 +249,8 @@ contract("DWorldCore", function(accounts) {
     })
     
     describe("Plot data", function() {
-        before(deployContract);
-        before(mintTokens);
+        beforeEach(deployContract);
+        beforeEach(mintTokens);
         
         it("is initially empty", async function() {            
             var data = await core.identifierToPlot(plotA);
@@ -267,6 +267,47 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("can be updated by owner", async function() {
+            await core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1});
+            var data = await core.identifierToPlot(plotA);
+            assert.lengthOf(data, 5);
+            // data[0] is equal to the plot's creation time
+            assert.equal(data[1], 'TestName');
+            assert.equal(data[2], 'TestDescription');
+            assert.equal(data[3], 'TestImageUrl');
+            assert.equal(data[4], 'TestInfoUrl');
+        });
+        
+        it("should prevent updating by owner if a renter is assigned", async function() {
+            await core.rentOut(user2, 1800, plotA, {from: user1});
+            await utils.assertRevert(core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1}));
+        });
+        
+        it("allows renter to update plot data", async function() {
+            await core.rentOut(user2, 1800, plotA, {from: user1});
+            
+            await core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user2});
+            var data = await core.identifierToPlot(plotA);
+            assert.lengthOf(data, 5);
+            // data[0] is equal to the plot's creation time
+            assert.equal(data[1], 'TestName');
+            assert.equal(data[2], 'TestDescription');
+            assert.equal(data[3], 'TestImageUrl');
+            assert.equal(data[4], 'TestInfoUrl');
+        });
+        
+        it("should prevent renter from updating plot data after rent period has expired", async function() {
+            await core.rentOut(user2, 60, plotA, {from: user1});
+            
+            await utils.increaseTime(65);
+            
+            await utils.assertRevert(core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user2}));
+        });
+        
+        it("allows owner to update plot data after rent period has expired", async function() {
+            await core.rentOut(user2, 60, plotA, {from: user1});
+            
+            await utils.increaseTime(65);
+            
             await core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1});
             var data = await core.identifierToPlot(plotA);
             assert.lengthOf(data, 5);
