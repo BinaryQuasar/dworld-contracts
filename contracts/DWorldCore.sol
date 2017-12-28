@@ -20,8 +20,10 @@ contract DWorldCore is DWorldAuction {
         public
         whenNotPaused
     {
-        // The sender requesting the data update should be the owner
-        require(_owns(msg.sender, _tokenId));
+        // The sender requesting the data update should be
+        // the owner (without an active renter) or should
+        // be the active renter.
+        require(_owns(msg.sender, _tokenId) && identifierToRentPeriodEndTimestamp[_tokenId] < now || _rents(msg.sender, _tokenId));
     
         // Set the data
         identifierToPlot[_tokenId].name = name;

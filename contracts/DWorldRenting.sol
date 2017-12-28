@@ -8,6 +8,13 @@ contract DWorldRenting is DWorldToken {
     mapping (uint256 => address) identifierToRenter;
     mapping (uint256 => uint256) identifierToRentPeriodEndTimestamp;
 
+    /// @dev Checks if a given address rents a particular plot.
+    /// @param _renter The address of the renter to check for.
+    /// @param _tokenId The plot identifier to check for.
+    function _rents(address _renter, uint256 _tokenId) internal view returns (bool) {
+        return identifierToRenter[_tokenId] == _renter && identifierToRentPeriodEndTimestamp[_tokenId] >= now;
+    }
+    
     /// @dev Rent out a token to an address.
     /// @param _to The address to rent the token out to.
     /// @param _rentPeriod The rent period in seconds.
