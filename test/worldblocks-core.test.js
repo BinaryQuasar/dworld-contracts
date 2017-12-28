@@ -24,7 +24,7 @@ contract("DWorldCore", function(accounts) {
     async function deployContract() {
         debug("Deploying DWorld core contract.");
         
-        core = await DWorldCore.new(owner);
+        core = await DWorldCore.new({from: owner, gas: 5000000});
         gasPrice = new BigNumber(core.constructor.class_defaults.gasPrice);
         unclaimedPlotPrice = await core.unclaimedPlotPrice();
     }
