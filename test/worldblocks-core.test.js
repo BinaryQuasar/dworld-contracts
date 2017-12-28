@@ -114,6 +114,19 @@ contract("DWorldCore", function(accounts) {
             assert.equal(await core.totalSupply(), 6);
         });
         
+        it("should correctly assign identifiers to minted tokens", async function() {
+            await core.claimPlotMultiple([0, 1], {from: user1, value: 2 * unclaimedPlotPrice});
+            await core.claimPlot(42, {from: user1, value: unclaimedPlotPrice});
+            
+            assert.equal(await core.plots(0), plotA);
+            assert.equal(await core.plots(1), plotB);
+            assert.equal(await core.plots(2), plotC);
+            assert.equal(await core.plots(3), plotD);
+            assert.equal(await core.plots(4), 0);
+            assert.equal(await core.plots(5), 1);
+            assert.equal(await core.plots(6), 42);
+        });
+        
         it("should not allow transferring tokens to 0x0", async function() {
             await utils.assertRevert(core.transfer(0x0, plotA, {from: user1}));
         });

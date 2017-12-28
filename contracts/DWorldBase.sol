@@ -20,7 +20,7 @@ contract DWorldBase is DWorldAccessControl {
     /// cheaper. (The impact of this in mappings is less noticeable,
     /// and using uint40 in the mappings below actually *increases*
     /// gas cost for minting).
-    uint40[] plots;
+    uint40[] public plots;
     
     mapping (uint256 => Plot) public identifierToPlot;
     mapping (uint256 => address) identifierToOwner;
