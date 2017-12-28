@@ -2,6 +2,7 @@ pragma solidity ^0.4.18;
 
 import "./DWorldToken.sol";
 
+/// @dev Holds functionality for minting new plot tokens.
 contract DWorldMinting is DWorldToken {
     uint256 public unclaimedPlotPrice = 0.0025 ether;
     

@@ -2,6 +2,7 @@ pragma solidity ^0.4.18;
 
 import "./DWorldAccessControl.sol";
 
+/// @dev Defines base data structures for DWorld.
 contract DWorldBase is DWorldAccessControl {
     /// Plot data
     struct Plot {

@@ -2,6 +2,7 @@ pragma solidity ^0.4.18;
 
 import "./DWorldAuction.sol";
 
+/// @dev Implements highest-level DWorld functionality.
 contract DWorldCore is DWorldAuction {
     /// If this contract is broken, this will be used to publish the address at which an upgraded contract can be found
     address public upgradedContractAddress;

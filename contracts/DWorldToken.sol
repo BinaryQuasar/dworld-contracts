@@ -3,7 +3,7 @@ pragma solidity ^0.4.18;
 import "./ERC721Draft.sol";
 import "./DWorldBase.sol";
 
-/// Implements ERC721.
+/// @dev Holds token functionality such as approving and transferring. Implements ERC721.
 contract DWorldToken is DWorldBase, ERC721 {
     /// @notice Name and symbol of the non fungible token, as defined in ERC721.
     string public constant name = "DWorld Plots";

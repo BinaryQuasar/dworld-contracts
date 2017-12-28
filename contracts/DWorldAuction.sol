@@ -2,6 +2,7 @@ pragma solidity ^0.4.18;
 
 import "./DWorldMinting.sol";
 
+/// @dev Implements DWorld auction functionality.
 contract DWorldAuction is DWorldMinting {
     uint256 public outstandingEther = 0 ether;
     mapping (address => uint256) addressToEtherOwed;

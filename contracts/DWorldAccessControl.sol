@@ -3,6 +3,7 @@ pragma solidity ^0.4.18;
 import "zeppelin-solidity/contracts/ownership/Claimable.sol";
 import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
 
+/// @dev Implements access control to the DWorld contract.
 contract DWorldAccessControl is Claimable, Pausable {
     address public cfoAddress;
 
