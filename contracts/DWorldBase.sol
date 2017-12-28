@@ -38,11 +38,11 @@ contract DWorldBase is DWorldAccessControl {
     
     /// @dev Turn a single uint representation of a coordinate into its x and y parts.
     /// @param identifier The uint representation of a coordinate.
-    function identifierToCoordinate(uint256 identifier) public pure returns(uint24 x, uint24 y) {
+    function identifierToCoordinate(uint256 identifier) public pure returns(uint256 x, uint256 y) {
         require(validIdentifier(identifier));
     
-        y = uint24(identifier >> 17);
-        x = uint24(identifier - (y << 17));
+        y = identifier >> 17;
+        x = identifier - (y << 17);
     }
     
     /// @dev Test whether the coordinate is valid.
