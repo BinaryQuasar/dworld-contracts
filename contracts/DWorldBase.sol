@@ -1,9 +1,12 @@
 pragma solidity ^0.4.18;
 
+import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "./DWorldAccessControl.sol";
 
 /// @dev Defines base data structures for DWorld.
 contract DWorldBase is DWorldAccessControl {
+    using SafeMath for uint256;
+
     /// Plot data
     struct Plot {
         uint256 mintedTimestamp;

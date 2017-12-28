@@ -1,12 +1,9 @@
 pragma solidity ^0.4.18;
 
-import "zeppelin-solidity/contracts/math/SafeMath.sol";
-import "./DWorldToken.sol";
+import "./DWorldRenting.sol";
 
 /// @dev Holds functionality for minting new plot tokens.
-contract DWorldMinting is DWorldToken {
-    using SafeMath for uint256;
-
+contract DWorldMinting is DWorldRenting {
     uint256 public unclaimedPlotPrice = 0.0025 ether;
     
     /// @notice Sets the new price for unclaimed plots.
