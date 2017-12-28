@@ -183,4 +183,20 @@ contract DWorldToken is DWorldBase, ERC721 {
             return result;
         }
     }
+    
+    /// @notice Returns an (off-chain) metadata url for the given token.
+    /// @param _tokenId The identifier of the token to get the metadata
+    /// url for.
+    /// @dev Implementation of optional ERC-721 functionality.
+    function tokenMetadata(uint256 _tokenId) external view returns (string metadataUrl) {
+        require(validIdentifier(_tokenId));
+    
+        // Maximum token length in decimals is 11 (17179869183)
+        metadataUrl = "https://dworld.io/plot/xxxxxxxxxxx";
+        bytes memory _metadataUrl = bytes(metadataUrl);
+        
+        for (uint256 i = 0; i < 11; i++) {
+            _metadataUrl[33 - i] = byte(48 + (_tokenId / 10 ** i) % 10);
+        }
+    }
 }

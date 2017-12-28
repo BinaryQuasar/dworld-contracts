@@ -206,6 +206,15 @@ contract("DWorldCore", function(accounts) {
             await utils.assertRevert(core.claimPlotMultiple([10, 10], {from: user1, value: 2 * unclaimedPlotPrice}));
             await utils.assertRevert(core.claimPlot(plotA, {from: user1, value: 1 * unclaimedPlotPrice}));
         });
+        
+        it("creates correct metadata urls", async function() {
+            assert.equal(await core.tokenMetadata(0), "https://dworld.io/plot/00000000000");
+            assert.equal(await core.tokenMetadata(1), "https://dworld.io/plot/00000000001");
+            assert.equal(await core.tokenMetadata(42), "https://dworld.io/plot/00000000042");
+            assert.equal(await core.tokenMetadata(17179869183), "https://dworld.io/plot/17179869183");
+            await utils.assertRevert(core.tokenMetadata(17179869184));
+            await utils.assertRevert(core.tokenMetadata(-1));
+        });
     });
     
     describe("Plot data", function() {
