@@ -213,7 +213,7 @@ contract DWorldToken is DWorldBase, ERC721 {
     /// @param _tokenId The identifier of the token to get the metadata
     /// url for.
     /// @dev Implementation of optional ERC-721 functionality.
-    function tokenMetadata(uint256 _tokenId) external view returns (string metadataUrl) {
+    function tokenMetadata(uint256 _tokenId) external pure returns (string metadataUrl) {
         require(validIdentifier(_tokenId));
     
         // Maximum token length in decimals is 11 (17179869183)
