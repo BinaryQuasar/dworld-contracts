@@ -79,52 +79,6 @@ contract("DWorldCore", function(accounts) {
         });
     });
     
-        /*
-    describe("NonFungible, EIP-721", function() {
-        let plotA, plotB, plotC, plotD;
-        before(deployContract);
-
-        it("buy a few plots", async function() {
-            core.buyNewWorldBlocks({from: user1});
-        });
-
-        it("approve + transferFrom + ownerOf", async function() {
-            await coreC.approve(user1, kitC);
-            eq(await coreC.ownerOf(kitC), coo);
-            await coreC.transferFrom(coo, user1, kitC, { from: user1 });
-            eq(await coreC.ownerOf(kitC), user1);
-        });
-
-        it("balanceOf", async function() {
-            eq(await coreC.balanceOf(coo), 9);
-            eq(await coreC.balanceOf(user1), 1);
-            eq(await coreC.balanceOf(user2), 0);
-        });
-
-        it("tokensOfOwnerByIndex", async function() {
-            eq(await coreC.tokensOfOwnerByIndex(coo, 0), kitA);
-            eq(await coreC.tokensOfOwnerByIndex(coo, 1), kitB);
-            eq(await coreC.tokensOfOwnerByIndex(coo, 2), kitD);
-            await util.assertRevert(coreC.tokensOfOwnerByIndex(coo, 10));
-            eq(await coreC.tokensOfOwnerByIndex(user1, 0), kitC);
-            await util.assertRevert(coreC.tokensOfOwnerByIndex(user1, 1));
-        });
-
-        it.skip("tokenMetadata", async function() {
-            debug(await coreC.website());
-            eq(
-                await coreC.tokenMetadata(kitA),
-                "https://www.cryptokitties.co/kitty/1"
-            );
-            eq(
-                await coreC.tokenMetadata(10),
-                "https://www.cryptokitties.co/kitty/10"
-            );
-            await util.assertRevert(coreC.tokenMetadata(11));
-        });
-    });
-    */
-    
     describe("Non-fungible plot tokens (EIP-721)", function() {
         beforeEach(deployContract);
         beforeEach(mintTokens);
