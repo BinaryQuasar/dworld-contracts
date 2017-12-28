@@ -3,11 +3,6 @@ pragma solidity ^0.4.18;
 import "./DWorldAccessControl.sol";
 
 contract DWorldBase is DWorldAccessControl {
-    
-    /// @dev Transfer event as defined in the ERC721. Emitted every time plot 
-    /// ownership is assigned.
-    event Transfer(address from, address to, uint256 tokenId);
-    
     /// Plot data
     struct Plot {
         uint256 mintedTimestamp;
@@ -60,27 +55,5 @@ contract DWorldBase is DWorldAccessControl {
     /// @param identifier The identifier to test.
     function validIdentifier(uint256 identifier) public pure returns(bool) {
         return identifier < 17179869184; // 2^17 * 2^17
-    }
-    
-    /// @dev Assigns ownership of a specific plot to an address.
-    function _transfer(address _from, address _to, uint256 _tokenId) internal {
-        // The number of plots is capped at 2^17 * 2^17, so this cannot
-        // be overflowed.
-        ownershipTokenCount[_to]++;
-        
-        // Transfer ownership.
-        identifierToOwner[_tokenId] = _to;
-        
-        // When a new plot is minted, the _from address is 0x0, but we
-        // do not track token ownership of 0x0.
-        if (_from != address(0)) {
-            ownershipTokenCount[_from]--;
-            
-            // Clear taking ownership approval.
-            delete identifierToApproved[_tokenId];
-        }
-        
-        // Emit the transfer event.
-        Transfer(_from, _to, _tokenId);
     }
 }

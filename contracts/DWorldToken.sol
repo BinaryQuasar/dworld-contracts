@@ -41,6 +41,28 @@ contract DWorldToken is DWorldBase, ERC721 {
         return identifierToApproved[_tokenId] == _claimant;
     }
     
+    /// @dev Assigns ownership of a specific plot to an address.
+    function _transfer(address _from, address _to, uint256 _tokenId) internal {
+        // The number of plots is capped at 2^17 * 2^17, so this cannot
+        // be overflowed.
+        ownershipTokenCount[_to]++;
+        
+        // Transfer ownership.
+        identifierToOwner[_tokenId] = _to;
+        
+        // When a new plot is minted, the _from address is 0x0, but we
+        // do not track token ownership of 0x0.
+        if (_from != address(0)) {
+            ownershipTokenCount[_from]--;
+            
+            // Clear taking ownership approval.
+            delete identifierToApproved[_tokenId];
+        }
+        
+        // Emit the transfer event.
+        Transfer(_from, _to, _tokenId);
+    }
+    
     // ERC 721 implementation
     
     /// @notice Returns the total number of plots currently in existence.
