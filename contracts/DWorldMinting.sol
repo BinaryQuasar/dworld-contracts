@@ -1,9 +1,12 @@
 pragma solidity ^0.4.18;
 
+import "zeppelin-solidity/contracts/math/SafeMath.sol";
 import "./DWorldToken.sol";
 
 /// @dev Holds functionality for minting new plot tokens.
 contract DWorldMinting is DWorldToken {
+    using SafeMath for uint256;
+
     uint256 public unclaimedPlotPrice = 0.0025 ether;
     
     /// @notice Sets the new price for unclaimed plots.
@@ -24,7 +27,7 @@ contract DWorldMinting is DWorldToken {
     /// @notice Buy unclaimed plots.
     /// @param _tokenIds The unclaimed plots to buy.
     function claimPlotMultiple(uint256[] _tokenIds) public payable whenNotPaused {
-        uint256 etherRequired = unclaimedPlotPrice * _tokenIds.length;
+        uint256 etherRequired = unclaimedPlotPrice.mul(_tokenIds.length);
         
         // Ensure enough ether is supplied.
         require(msg.value >= etherRequired);
@@ -34,7 +37,7 @@ contract DWorldMinting is DWorldToken {
         // Allocate additional memory for the plots array
         // (this is more efficient than .push-ing each individual
         // plot, as that requires multiple dynamic allocations).
-        plots.length += _tokenIds.length;
+        plots.length = plots.length.add(_tokenIds.length);
         
         for (uint256 i = 0; i < _tokenIds.length; i++) { 
             uint256 _tokenId = _tokenIds[i];
@@ -53,7 +56,9 @@ contract DWorldMinting is DWorldToken {
             _transfer(address(0), msg.sender, _tokenId);
         }
         
-        // Calculate the excess ether sent.
+        // Calculate the excess ether sent
+        // msg.value is greater than or equal to etherRequired,
+        // so this cannot underflow.
         uint256 excess = msg.value - etherRequired;
         
         if (excess > 0) {

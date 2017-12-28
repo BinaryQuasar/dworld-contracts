@@ -16,8 +16,9 @@ contract DWorldAuction is DWorldMinting {
         // Set ether owed to 0   
         addressToEtherOwed[msg.sender] = 0;
         
-        // Subtract from outstanding balance
-        // etherOwed is guaranteed to be less than or equal to outstandingEther, so this won't go negative.
+        // Subtract from outstanding balance. etherOwed is guaranteed
+        // to be less than or equal to outstandingEther, so this cannot
+        // underflow.
         outstandingEther -= etherOwed;
         
         // Transfer ether owed to sender (not susceptible to re-entry attack, as
