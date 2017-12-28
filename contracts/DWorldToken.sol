@@ -137,14 +137,14 @@ contract DWorldToken is DWorldBase, ERC721 {
     /// @param _to The address of the recipient, can be a user or contract.
     /// @param _tokenIds The identifiers of the plots to transfer.
     function transferMultiple(address _to, uint256[] _tokenIds) public whenNotPaused {
+        // Safety check to prevent against an unexpected 0x0 default.
+        require(_to != address(0));
+        
+        // Disallow transfers to this contract to prevent accidental misuse.
+        require(_to != address(this));
+    
         for (uint256 i = 0; i < _tokenIds.length; i++) {
             uint256 _tokenId = _tokenIds[i];
-        
-            // Safety check to prevent against an unexpected 0x0 default.
-            require(_to != address(0));
-            
-            // Disallow transfers to this contract to prevent accidental misuse.
-            require(_to != address(this));
             
             // One can only transfer their own plots.
             require(_owns(msg.sender, _tokenId));
