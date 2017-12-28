@@ -184,6 +184,70 @@ contract("DWorldCore", function(accounts) {
         });
     });
     
+    describe("Renting", function() {
+        beforeEach(deployContract);
+        beforeEach(mintTokens);
+        
+        it("should have no renter by default", async function() {
+            var renterAndPeriodEnd = await core.renterOf(plotA);
+            assert.equal(renterAndPeriodEnd[0], 0);
+            assert.equal(renterAndPeriodEnd[1], 0);
+        });
+        
+        it("should prevent non-token holder from renting a token out", async function() {
+            await utils.assertRevert(core.rentOut(user3, 60, plotA, {from: user2}));
+        });
+        
+        it("allows token holder to rent out a plot", async function() {
+            await core.rentOut(user2, 60, plotA, {from: user1});
+            
+            // Get tx timestamp
+            var timestamp = utils.latestTime();
+            
+            // Owner should remain unchanged
+            assert.equal(await core.ownerOf(plotA), user1);
+            
+            var renterAndPeriodEnd = await core.renterOf(plotA);
+            assert.equal(renterAndPeriodEnd[0], user2);
+            assert.equal(renterAndPeriodEnd[1], timestamp + 60);
+        });
+        
+        it("after rent period expiry there should be no renter", async function() {
+            await core.rentOut(user2, 60, plotA, {from: user1});
+            
+            var renterAndPeriodEnd = await core.renterOf(plotA);
+            assert.equal(renterAndPeriodEnd[0], user2);
+            
+            // Increase time to end of rent period
+            await utils.increaseTime(65); // Increase time by a bit more than 60 seconds to account for minor time fluctuations
+            
+            renterAndPeriodEnd = await core.renterOf(plotA);
+            assert.equal(renterAndPeriodEnd[0], 0);
+            assert.equal(renterAndPeriodEnd[1], 0);
+        });
+        
+        it("should prevent renter from transferring the token", async function() {
+            await core.rentOut(user2, 60, plotA, {from: user1});
+            await utils.assertRevert(core.transfer(user3, plotA, {from: user2}));
+        });
+        
+        it("allows ownership transfer with active renter", async function() {
+            await core.rentOut(user2, 1800, plotA, {from: user1});
+            
+            // Get tx timestamp
+            var timestamp = utils.latestTime();
+            
+            await core.transfer(user3, plotA, {from: user1});
+            
+            assert.equal(await core.ownerOf(plotA), user3);
+            
+            // Renter should remain unchanged
+            var renterAndPeriodEnd = await core.renterOf(plotA);
+            assert.equal(renterAndPeriodEnd[0], user2);
+            assert.equal(renterAndPeriodEnd[1], timestamp + 1800);
+        });
+    })
+    
     describe("Plot data", function() {
         before(deployContract);
         before(mintTokens);
