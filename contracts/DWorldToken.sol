@@ -42,6 +42,9 @@ contract DWorldToken is DWorldBase, ERC721 {
     }
     
     /// @dev Assigns ownership of a specific plot to an address.
+    /// @param _from The address to transfer the token from.
+    /// @param _to The address to transfer the token to.
+    /// @param _tokenId The identifier of the token to transfer.
     function _transfer(address _from, address _to, uint256 _tokenId) internal {
         // The number of plots is capped at 2^17 * 2^17, so this cannot
         // be overflowed.
