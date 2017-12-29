@@ -47,6 +47,6 @@ contract DWorldCore is DWorldAuction {
     /// @dev Allow the CFO to withdraw balance available to this contract (minus
     /// ether owed through auctions).
     function withdrawBalance() external onlyCFO {
-        cfoAddress.transfer(this.balance - outstandingEther);
+        cfoAddress.transfer(this.balance);
     }
 }

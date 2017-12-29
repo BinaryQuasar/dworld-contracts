@@ -1,28 +1,69 @@
 pragma solidity ^0.4.18;
 
 import "./DWorldMinting.sol";
+import "./auction/SaleAuction.sol";
+import "./auction/RentAuction.sol";
 
 /// @dev Implements DWorld auction functionality.
 contract DWorldAuction is DWorldMinting {
-    uint256 public outstandingEther = 0 ether;
-    mapping (address => uint256) addressToEtherOwed;
+    SaleAuction public saleAuctionContract;
+    RentAuction public rentAuctionContract;
     
-    function withdrawAuctionBalance() external {
-        uint256 etherOwed = addressToEtherOwed[msg.sender];
+    /// @notice set the contract address of the sale auction.
+    /// @param _address The address of the sale auction.
+    function setSaleAuctionContractAddress(address _address) external onlyOwner {
+        SaleAuction _contract = SaleAuction(_address);
+    
+        require(_contract.isSaleAuction());
         
-        // Ensure ether is owed to the sender
-        require(etherOwed > 0);
-         
-        // Set ether owed to 0   
-        addressToEtherOwed[msg.sender] = 0;
+        saleAuctionContract = _contract;
+    }
+    
+    /// @notice Set the contract address of the rent auction.
+    /// @param _address The address of the rent auction.
+    function setRentAuctionContractAddress(address _address) external onlyOwner {
+        RentAuction _contract = RentAuction(_address);
+    
+        require(_contract.isRentAuction());
         
-        // Subtract from outstanding balance. etherOwed is guaranteed
-        // to be less than or equal to outstandingEther, so this cannot
-        // underflow.
-        outstandingEther -= etherOwed;
+        rentAuctionContract = _contract;
+    }
+    
+    /// @notice Create a sale auction.
+    /// @param _tokenId The identifier of the token to create a sale auction for.
+    /// @param _startPrice The starting price of the sale auction.
+    /// @param _endPrice The ending price of the sale auction.
+    /// @param _duration The duration in seconds of the dynamic pricing part of the sale auction.
+    function createSaleAuction(uint256 _tokenId, uint256 _startPrice, uint256 _endPrice, uint256 _duration)
+        external
+        whenNotPaused
+    {
+        require(_owns(msg.sender, _tokenId));
+    
+        // Approve the token for transferring to the sale auction.
+        _approve(address(saleAuctionContract), _tokenId);
+    
+        // Auction contract checks input values (throws if invalid) and places the token into escrow.
+        saleAuctionContract.createAuction(_tokenId, _startPrice, _endPrice, _duration);
+    }
+    
+    /// @notice Create a rent auction.
+    /// @param _tokenId The identifier of the token to create a rent auction for.
+    /// @param _startPrice The starting price of the rent auction.
+    /// @param _endPrice The ending price of the rent auction.
+    /// @param _duration The duration in seconds of the dynamic pricing part of the rent auction.
+    /// @param _rentPeriod The rent period in seconds being auctioned.
+    function createRentAuction(uint256 _tokenId, uint256 _startPrice, uint256 _endPrice, uint256 _duration, uint256 _rentPeriod)
+        external
+        whenNotPaused
+    {
+        require(_owns(msg.sender, _tokenId));
         
-        // Transfer ether owed to sender (not susceptible to re-entry attack, as
-        // the ether owed is set to 0 before the transfer takes place).
-        msg.sender.transfer(etherOwed);
+        // Approve the token for transferring to the rent auction.
+        _approve(address(rentAuctionContract), _tokenId);
+        
+        // Throws if the auction is invalid (e.g. token is already),
+        // and places the token into escrow.
+        rentAuctionContract.createAuction(_tokenId, _startPrice, _endPrice, _duration, _rentPeriod);
     }
 }
