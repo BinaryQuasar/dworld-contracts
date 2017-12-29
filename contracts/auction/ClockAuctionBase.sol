@@ -32,8 +32,8 @@ contract ClockAuctionBase {
     mapping (uint256 => Auction) identifierToAuction;
     
     // Events
-    event AuctionCreated(uint256 indexed tokenId, uint256 startPrice, uint256 endPrice, uint256 duration);
-    event AuctionSuccessful(uint256 indexed tokenId, uint256 totalPrice, address indexed buyer);
+    event AuctionCreated(address indexed seller, uint256 indexed tokenId, uint256 startPrice, uint256 endPrice, uint256 duration);
+    event AuctionSuccessful(address indexed buyer, uint256 indexed tokenId, uint256 totalPrice);
     event AuctionCancelled(uint256 indexed tokenId);
     
     /// @dev Modifier to check whether the value can be stored in a 64 bit uint.
@@ -80,7 +80,7 @@ contract ClockAuctionBase {
         identifierToAuction[_tokenId] = auction;
         
         // Trigger auction created event.
-        AuctionCreated(_tokenId, auction.startPrice, auction.endPrice, auction.duration);
+        AuctionCreated(auction.seller, _tokenId, auction.startPrice, auction.endPrice, auction.duration);
     }
     
     /// @dev Bid on an auction.
@@ -115,7 +115,19 @@ contract ClockAuctionBase {
             _assignProceeds(seller, proceeds);
         }
         
-        AuctionSuccessful(_tokenId, price, _buyer);
+        AuctionSuccessful(_buyer, _tokenId, price);
+        
+        // The bid was won!
+        _winBid(seller, _buyer, _tokenId, price);
+    }
+
+    /// @dev Perform the bid win logic (in this case: transfer the token).
+    /// @param _seller The address of the seller.
+    /// @param _winner The address of the winner.
+    /// @param _tokenId The identifier of the token.
+    /// @param _price The price the auction was bought at.
+    function _winBid(address _seller, address _winner, uint256 _tokenId, uint256 _price) internal {
+        _transfer(_winner, _tokenId);
     }
     
     /// @dev Cancel an auction.

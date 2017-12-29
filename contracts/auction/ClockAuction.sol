@@ -104,16 +104,6 @@ contract ClockAuction is ClockAuctionBase, Pausable {
     function bid(uint256 _tokenId) external payable whenNotPaused {
         // Throws if the bid does not succeed.
         _bid(msg.sender, msg.value, _tokenId);
-        
-        // The bid was won!
-        _winBid(msg.sender, _tokenId);
-    }
-    
-    /// @dev Perform the bid win logic (in this case: transfer the token).
-    /// @param _winner The address of the winner.
-    /// @param _tokenId The identifier of the token.
-    function _winBid(address _winner, uint256 _tokenId) internal {
-        _transfer(_winner, _tokenId);
     }
     
     /// @dev Returns the current price of an auction.

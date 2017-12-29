@@ -43,18 +43,18 @@ contract RentAuction is ClockAuction {
     }
     
     /// @dev Perform the bid win logic (in this case: give renter status to the winner).
+    /// @param _seller The address of the seller.
     /// @param _winner The address of the winner.
     /// @param _tokenId The identifier of the token.
-    function _winBid(address _winner, uint256 _tokenId) internal {
+    /// @param _price The price the auction was bought at.
+    function _winBid(address _seller, address _winner, uint256 _tokenId, uint256 _price) internal {
         DWorldRenting dWorldRentingContract = DWorldRenting(tokenContract);
     
         // Rent the token out to the winner
         dWorldRentingContract.rentOut(_winner, identifierToRentPeriod[_tokenId], _tokenId);
         
-        address seller = identifierToAuction[_tokenId].seller;
-        
         // Transfer the token back to the seller
-        _transfer(seller, _tokenId);
+        _transfer(_seller, _tokenId);
     }
     
     /// @dev Remove an auction.
