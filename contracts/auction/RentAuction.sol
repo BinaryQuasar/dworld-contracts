@@ -13,17 +13,18 @@ contract RentAuction is ClockAuction {
     
     /// @notice Create an auction for a given token.
     /// Must previously have been given approval to take ownership of the token.
+    /// @rentPeriod 
     function createAuction(
         uint256 _tokenId,
         uint256 _startPrice,
         uint256 _endPrice,
         uint256 _duration,
-        uint256 rentPeriod
+        uint256 _rentPeriod
     )
         external
     {
         // Require the rent period to be at least one hour.
-        require(rentPeriod >= 3600);
+        require(_rentPeriod >= 3600);
         
         // Require there to be no active renter.
         DWorldRenting dWorldRentingContract = DWorldRenting(tokenContract);
@@ -31,7 +32,7 @@ contract RentAuction is ClockAuction {
         require(renter == address(0));
     
         // Set the rent period.
-        identifierToRentPeriod[_tokenId] = rentPeriod;
+        identifierToRentPeriod[_tokenId] = _rentPeriod;
     
         // Throws (reverts) if creating the auction fails.
         createAuction(_tokenId, _startPrice, _endPrice, _duration);
