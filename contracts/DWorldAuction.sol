@@ -66,4 +66,11 @@ contract DWorldAuction is DWorldMinting {
         // and places the token into escrow.
         rentAuctionContract.createAuction(_tokenId, _startPrice, _endPrice, _duration, _rentPeriod);
     }
+    
+    /// @notice Allow the CFO to capture the free balance available
+    /// in the auction contracts.
+    function withdrawAuctionBalances() external onlyCFO {
+        saleAuctionContract.withdrawFreeBalance();
+        rentAuctionContract.withdrawFreeBalance();
+    }
 }
