@@ -11,7 +11,9 @@ contract RentAuction is ClockAuction {
     
     mapping (uint256 => uint256) public identifierToRentPeriod;
     
-    /// @notice Create an auction for a given token.
+    /// @notice Create an auction for a given token. Be careful when calling
+    /// createAuction for a RentAuction, that this overloaded function (including
+    /// the _rentPeriod parameter) is used.
     /// Must previously have been given approval to take ownership of the token.
     /// @param _tokenId The identifier of the token to create an auction for.
     /// @param _startPrice The starting price of the auction.
