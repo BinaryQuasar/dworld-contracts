@@ -13,7 +13,8 @@ contract RentAuction is ClockAuction {
     
     /// @notice Create an auction for a given token. Be careful when calling
     /// createAuction for a RentAuction, that this overloaded function (including
-    /// the _rentPeriod parameter) is used.
+    /// the _rentPeriod parameter) is used. Otherwise the rent period defaults to
+    /// a week.
     /// Must previously have been given approval to take ownership of the token.
     /// @param _tokenId The identifier of the token to create an auction for.
     /// @param _startPrice The starting price of the auction.
@@ -51,6 +52,11 @@ contract RentAuction is ClockAuction {
     /// @param _price The price the auction was bought at.
     function _winBid(address _seller, address _winner, uint256 _tokenId, uint256 _price) internal {
         DWorldRenting dWorldRentingContract = DWorldRenting(tokenContract);
+    
+        uint256 rentPeriod = identifierToRentPeriod[_tokenId];
+        if (rentPeriod == 0) {
+            rentPeriod = 604800; // 1 week
+        }
     
         // Rent the token out to the winner
         dWorldRentingContract.rentOut(_winner, identifierToRentPeriod[_tokenId], _tokenId);
