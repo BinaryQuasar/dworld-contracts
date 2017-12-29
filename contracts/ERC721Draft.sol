@@ -24,11 +24,11 @@ contract ERC721 {
     event Approval(address indexed owner, address indexed approved, uint256 indexed tokenId);
 
     // Optional
-    // function name() external view returns (string _name);
-    // function symbol() external view returns (string _symbol);
+    // function name() external pure returns (string _name);
+    // function symbol() external pure returns (string _symbol);
     // function tokensOfOwner(address _owner) external view returns (uint256[] tokenIds);
-    // function tokenMetadata(uint _tokenId) external view returns (string _infoUrl);
+    // function tokenMetadata(uint _tokenId) external pure returns (string _infoUrl);
 
     // ERC-165 Compatibility (https://github.com/ethereum/EIPs/issues/165)
-    // function supportsInterface(bytes4 _interfaceID) external view returns (bool);
+    function supportsInterface(bytes4 _interfaceID) external pure returns (bool);
 }
