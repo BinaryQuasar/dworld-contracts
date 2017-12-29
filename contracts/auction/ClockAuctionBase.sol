@@ -101,9 +101,6 @@ contract ClockAuctionBase {
         
         address seller = auction.seller;
     
-        // Remove the auction
-        _removeAuction(_tokenId);
-    
         if (price > 0) {
             uint256 totalFee = _calculateFee(price);
             uint256 proceeds = price - totalFee;
@@ -119,6 +116,13 @@ contract ClockAuctionBase {
         
         // The bid was won!
         _winBid(seller, _buyer, _tokenId, price);
+        
+        // Remove the auction (we do this at the end, as
+        // winBid might require some additional information
+        // that will be removed when _removeAuction is
+        // called. As we do not transfer funds here, we do
+        // not have to worry about re-entry attacks.
+        _removeAuction(_tokenId);
     }
 
     /// @dev Perform the bid win logic (in this case: transfer the token).
