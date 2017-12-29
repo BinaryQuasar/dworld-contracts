@@ -46,7 +46,7 @@ contract ClockAuction is ClockAuctionBase, Pausable {
     /// @notice Create an auction for a given token.
     /// Must previously have been given approval to take ownership of the token.
     function createAuction(uint256 _tokenId, uint256 _startPrice, uint256 _endPrice, uint256 _duration)
-        external
+        public
         fitsIn128Bits(_startPrice)
         fitsIn128Bits(_endPrice)
         fitsIn64Bits(_duration)
@@ -61,6 +61,9 @@ contract ClockAuction is ClockAuctionBase, Pausable {
             msg.sender == address(tokenContract)
             || msg.sender == tokenOwner
         );
+    
+        // The duration of the auction must be at least 60 seconds.
+        require(_duration >= 60);
     
         // Throws if placing the token in escrow fails (the contract requires
         // transfer approval prior to creating the auction).
