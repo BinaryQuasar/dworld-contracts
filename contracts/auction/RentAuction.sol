@@ -13,7 +13,11 @@ contract RentAuction is ClockAuction {
     
     /// @notice Create an auction for a given token.
     /// Must previously have been given approval to take ownership of the token.
-    /// @rentPeriod 
+    /// @param _tokenId The identifier of the token to create an auction for.
+    /// @param _startPrice The starting price of the auction.
+    /// @param _endPrice The ending price of the auction.
+    /// @param _duration The duration in seconds of the dynamic pricing part of the auction.
+    /// @param _rentPeriod The rent period in seconds being auctioned.
     function createAuction(
         uint256 _tokenId,
         uint256 _startPrice,
