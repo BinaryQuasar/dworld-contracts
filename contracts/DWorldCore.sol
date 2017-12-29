@@ -43,8 +43,8 @@ contract DWorldCore is DWorldAuction {
             setPlotData(_tokenId, name, description, imageUrl, infoUrl);
         }
     }
-
-    /// @dev Allow the CFO to withdraw balance available to this contract (minus
+    
+    /// @notice Allow the CFO to withdraw balance available to this contract (minus
     /// ether owed through auctions).
     function withdrawBalance() external onlyCFO {
         cfoAddress.transfer(this.balance);
