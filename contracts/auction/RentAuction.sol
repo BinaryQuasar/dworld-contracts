@@ -27,7 +27,7 @@ contract RentAuction is ClockAuction {
         
         // Require there to be no active renter.
         DWorldRenting dWorldRentingContract = DWorldRenting(tokenContract);
-        var (renter, ___rentPeriod) = dWorldRentingContract.renterOf(_tokenId);
+        var (renter,) = dWorldRentingContract.renterOf(_tokenId);
         require(renter == address(0));
     
         // Set the rent period.
