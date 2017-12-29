@@ -303,6 +303,24 @@ contract("ClockAuction", function(accounts) {
             assert.isAtLeast(await web3.eth.getBalance(auction.address), actualPrice.times(0.035));
         });
         
+        it("should prevent non-owners from withdrawing free balance to the token contract", async function() {
+            await utils.assertRevert(auction.withdrawFreeBalance({from: user1}));
+        });
+        
+        it("allows the owner to withdraw the free balance to the token contract", async function() {
+            assert.equal(await web3.eth.getBalance(erc721.address), 0);
+            
+            // Withdraw free balance from the auction contract to the token contract.
+            await auction.withdrawFreeBalance({from: owner});
+            
+            // After transferring out the owed balance and free balance,
+            // there should be no balance left in the auction contract.
+            assert.equal(await web3.eth.getBalance(auction.address), 0);
+            
+            // Token contract should now have all the free balance.
+            assert.isAtLeast(await web3.eth.getBalance(erc721.address), actualPrice.times(0.035));
+        });
+        
         it("prevents non-owners from setting the auction fee",  async function() {
             await utils.assertRevert(auction.setFee(42, {from: user1}));
         });
