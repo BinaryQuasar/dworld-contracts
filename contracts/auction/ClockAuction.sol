@@ -45,6 +45,10 @@ contract ClockAuction is ClockAuctionBase, Pausable {
 
     /// @notice Create an auction for a given token.
     /// Must previously have been given approval to take ownership of the token.
+    /// @param _tokenId The identifier of the token to create an auction for.
+    /// @param _startPrice The starting price of the auction.
+    /// @param _endPrice The ending price of the auction.
+    /// @param _duration The duration of the dynamic pricing part of the auction.
     function createAuction(uint256 _tokenId, uint256 _startPrice, uint256 _endPrice, uint256 _duration)
         public
         fitsIn128Bits(_startPrice)
