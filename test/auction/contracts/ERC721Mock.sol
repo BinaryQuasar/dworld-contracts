@@ -7,6 +7,8 @@ import "./../../../contracts/ERC721Draft.sol";
 /// @dev Mock implementation of NonFungible, aiming for simplicity.
 contract ERC721Mock is ERC721 {
 
+    function() public payable {}
+
     function supportsInterface(bytes4 _interfaceID) external pure returns (bool) {
         return _interfaceID == INTERFACE_SIGNATURE_ERC721;
     }
