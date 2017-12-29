@@ -142,4 +142,20 @@ contract ClockAuction is ClockAuctionBase, Pausable {
         // the ether owed is set to 0 before the transfer takes place).
         msg.sender.transfer(etherOwed);
     }
+    
+    /// @notice Withdraw (unowed) contract balance.
+    function withdrawFreeBalance() external {
+        // Calculate the free (unowed) balance. This never underflows, as
+        // outstandingEther is guaranteed to be less than freeBalance.        
+        uint256 freeBalance = this.balance - outstandingEther;
+        
+        address tokenContractAddress = address(tokenContract);
+
+        require(
+            msg.sender == owner ||
+            msg.sender == tokenContractAddress
+        );
+        
+        tokenContractAddress.transfer(freeBalance);
+    }
 }
