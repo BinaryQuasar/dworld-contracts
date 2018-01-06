@@ -73,4 +73,12 @@ contract DWorldAuction is DWorldMinting {
         saleAuctionContract.withdrawFreeBalance();
         rentAuctionContract.withdrawFreeBalance();
     }
+    
+    /// @dev This contract is only payable by the auction contracts.
+    function() public payable {
+        require(
+            msg.sender == address(saleAuctionContract) ||
+            msg.sender == address(rentAuctionContract)
+        );
+    }
 }
