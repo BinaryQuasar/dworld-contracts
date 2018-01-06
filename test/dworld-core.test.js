@@ -4,6 +4,8 @@ const utils = require("./utils");
 
 // Test DWorld core
 const DWorldCore = artifacts.require("./DWorldCore.sol");
+const SaleAuction = artifacts.require("./auction/SaleAuction.sol");
+const RentAuction = artifacts.require("./auction/RentAuction.sol");
 
 contract("DWorldCore", function(accounts) {
     const owner = accounts[0];
@@ -13,6 +15,8 @@ contract("DWorldCore", function(accounts) {
     const user3 = accounts[4];
     
     let core;
+    let saleAuction;
+    let rentAuction;
     let gasPrice;
     let unclaimedPlotPrice;
     let plotA = 3014702;
@@ -34,6 +38,16 @@ contract("DWorldCore", function(accounts) {
         
         // User1 mints a few tokens by sending Ether
         core.claimPlotMultiple([plotA, plotB, plotC, plotD], {from: user1, value: 4 * unclaimedPlotPrice});
+    }
+    
+    async function deployAuctionContracts() {
+        debug("Deploying auction contracts.");
+        
+        saleAuction = await SaleAuction.new(core.address, 3500, {from: owner, gas: 5000000});
+        rentAuction = await RentAuction.new(core.address, 3500, {from: owner, gas: 5000000});
+        
+        core.setSaleAuctionContractAddress(saleAuction.address);
+        core.setRentAuctionContractAddress(rentAuction.address);
     }
     
     describe("Initial state", function() {
@@ -210,6 +224,11 @@ contract("DWorldCore", function(accounts) {
             var renterAndPeriodEnd = await core.renterOf(plotA);
             assert.equal(renterAndPeriodEnd[0], user2);
             assert.equal(renterAndPeriodEnd[1], timestamp + 60);
+        });
+        
+        it("prevents renting out a plot that is already rented out", async function() {
+            await core.rentOut(user2, 60, plotA, {from: user1});
+            await utils.assertRevert(core.rentOut(user3, 60, plotA, {from: user1}));
         });
         
         it("after rent period expiry there should be no renter", async function() {
@@ -437,6 +456,72 @@ contract("DWorldCore", function(accounts) {
             
             await core.setUnclaimedPlotPrice(newPrice, {from: cfo});
             assert.deepEqual((await core.unclaimedPlotPrice()).toNumber(), newPrice.toNumber());
+        });
+    });
+    
+    describe("Auctions", function() {
+        before(deployContract);
+        before(async function setCFO() {
+            await core.setCFO(cfo, {from: owner});
+        });
+        before(mintTokens);
+        before(deployAuctionContracts);
+        
+        const oneEth = web3.toWei(new BigNumber("1"), 'ether');
+        const halfEth = web3.toWei(new BigNumber("0.5"), 'ether');
+        
+        it("should prevent non-token holder from putting up auctions", async function() {
+            await utils.assertRevert(core.createSaleAuction(plotA, oneEth, oneEth, utils.duration.days(3), {from: user2}));
+            await utils.assertRevert(core.createRentAuction(plotB, oneEth, oneEth, utils.duration.days(3), utils.duration.weeks(4), {from: user2}));
+        });
+        
+        it("should prevent rented-out token from being put up for a rent auction", async function() {
+            await core.rentOut(user2, 60, plotB, {from: user1});
+            await utils.assertRevert(core.createRentAuction(plotB, oneEth, oneEth, utils.duration.days(3), utils.duration.weeks(4), {from: user1}));
+        });
+        
+        it("allows token owner to put up token for auction", async function() {
+            // Wait for rent-out to expire
+            await utils.increaseTime(utils.duration.seconds(100));
+            
+            await core.createSaleAuction(plotA, oneEth, oneEth, utils.duration.days(3), {from: user1});
+            await core.createRentAuction(plotB, oneEth, oneEth, utils.duration.days(3), utils.duration.weeks(4), {from: user1});
+        });
+        
+        it("places tokens in auction escrow", async function() {
+            assert.equal(await core.ownerOf(plotA), saleAuction.address);
+            assert.equal(await core.ownerOf(plotB), rentAuction.address);
+        });
+        
+        it("does not fulfill auction when the bid is too low", async function() {
+            await utils.assertRevert(saleAuction.bid(plotA, {from: user2, value: halfEth}));
+            await utils.assertRevert(rentAuction.bid(plotB, {from: user2, value: halfEth}));
+        });
+        
+        it("does not fulfill sale auctions as rent and vice-versa", async function() {
+            await utils.assertRevert(saleAuction.bid(plotB, {from: user2, value: oneEth}));
+            await utils.assertRevert(rentAuction.bid(plotA, {from: user2, value: oneEth}));
+        });
+        
+        it("transfers tokens to winners of sale auctions", async function() {            
+            await saleAuction.bid(plotA, {from: user2, value: oneEth});
+            
+            // Token is transferred to new owner
+            assert.equal(await core.ownerOf(plotA), user2);
+        });
+        
+        it("grants renter status to winners of rent auctions", async function() {
+            await rentAuction.bid(plotB, {from: user3, value: oneEth.times(5)});
+            var timestamp = utils.latestTime();
+            
+            var [renter, rentPeriodEnd] = await core.renterOf(plotB);
+            
+            // Renter status is granted
+            assert.equal(renter, user3);
+            assert.equal(rentPeriodEnd.toNumber(), timestamp + utils.duration.weeks(4));
+            
+            // Token is transferred back to original owner
+            assert.equal(await core.ownerOf(plotB), user1);
         });
     });
     
