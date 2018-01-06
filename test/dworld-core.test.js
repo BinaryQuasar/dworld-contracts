@@ -523,6 +523,21 @@ contract("DWorldCore", function(accounts) {
             // Token is transferred back to original owner
             assert.equal(await core.ownerOf(plotB), user1);
         });
+        
+        it("should prevent non-CFO users from withdrawing auction funds to the core contract", async function() {
+            await utils.assertRevert(core.withdrawAuctionBalances({from: owner}));
+            await utils.assertRevert(core.withdrawAuctionBalances({from: user1}));
+        });
+        
+        it("successfully withdraws auction funds to the core contract", async function() {            
+            var balanceBefore = await web3.eth.getBalance(core.address);
+            
+            await core.withdrawAuctionBalances({from: cfo});
+            
+            var balanceAfter = await web3.eth.getBalance(core.address);
+            
+            assert.equal(balanceAfter.minus(balanceBefore).toNumber(), balanceBefore.plus(oneEth.times(2).times(0.035)).toNumber());
+        });
     });
     
     describe("Pausing", function() {
