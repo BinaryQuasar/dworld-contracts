@@ -470,6 +470,10 @@ contract("DWorldCore", function(accounts) {
         const oneEth = web3.toWei(new BigNumber("1"), 'ether');
         const halfEth = web3.toWei(new BigNumber("0.5"), 'ether');
         
+        // Keep track of total price of auctions and total amount paid to auctions
+        var totalPrice = new BigNumber("0");
+        var totalPaid = new BigNumber("0");
+        
         it("should prevent non-token holder from putting up auctions", async function() {
             await utils.assertRevert(core.createSaleAuction(plotA, oneEth, oneEth, utils.duration.days(3), {from: user2}));
             await utils.assertRevert(core.createRentAuction(plotB, oneEth, oneEth, utils.duration.days(3), utils.duration.weeks(4), {from: user2}));
@@ -486,6 +490,8 @@ contract("DWorldCore", function(accounts) {
             
             await core.createSaleAuction(plotA, oneEth, oneEth, utils.duration.days(3), {from: user1});
             await core.createRentAuction(plotB, oneEth, oneEth, utils.duration.days(3), utils.duration.weeks(4), {from: user1});
+            
+            totalPrice = totalPrice.plus(oneEth.times(2));
         });
         
         it("places tokens in auction escrow", async function() {
@@ -508,6 +514,8 @@ contract("DWorldCore", function(accounts) {
             
             // Token is transferred to new owner
             assert.equal(await core.ownerOf(plotA), user2);
+            
+            totalPaid = totalPaid.plus(oneEth);
         });
         
         it("grants renter status to winners of rent auctions", async function() {
@@ -522,6 +530,8 @@ contract("DWorldCore", function(accounts) {
             
             // Token is transferred back to original owner
             assert.equal(await core.ownerOf(plotB), user1);
+            
+            totalPaid = totalPaid.plus(oneEth.times(5));
         });
         
         it("should prevent non-CFO users from withdrawing auction funds to the core contract", async function() {
@@ -531,12 +541,12 @@ contract("DWorldCore", function(accounts) {
         
         it("successfully withdraws auction funds to the core contract", async function() {            
             var balanceBefore = await web3.eth.getBalance(core.address);
-            
             await core.withdrawAuctionBalances({from: cfo});
             
             var balanceAfter = await web3.eth.getBalance(core.address);
             
-            assert.equal(balanceAfter.minus(balanceBefore).toNumber(), balanceBefore.plus(oneEth.times(2).times(0.035)).toNumber());
+            var totalReceived = totalPaid.minus(totalPrice).add(totalPrice.times(0.035));
+            assert.equal(balanceAfter.minus(balanceBefore).toNumber(), totalReceived.toNumber());
         });
     });
     
