@@ -17,13 +17,13 @@ contract DWorldBase is DWorldAccessControl {
     }
     
     /// @dev All minted plots (array of plot identifiers). There are
-    /// 2^17 * 2^17 possible plots (covering the entire world), thus
-    /// at least 34 bits are required. This fits in a uint40. Storing
-    /// the identifiers as uint40 instead of uint256 makes storage
+    /// 2^16 * 2^16 possible plots (covering the entire world), thus
+    /// 32 bits are required. This fits in a uint32. Storing
+    /// the identifiers as uint32 instead of uint256 makes storage
     /// cheaper. (The impact of this in mappings is less noticeable,
-    /// and using uint40 in the mappings below actually *increases*
+    /// and using uint32 in the mappings below actually *increases*
     /// gas cost for minting).
-    uint40[] public plots;
+    uint32[] public plots;
     
     mapping (uint256 => Plot) public identifierToPlot;
     mapping (uint256 => address) identifierToOwner;
@@ -36,7 +36,7 @@ contract DWorldBase is DWorldAccessControl {
     function coordinateToIdentifier(uint256 x, uint256 y) public pure returns(uint256) {
         require(validCoordinate(x, y));
         
-        return (y << 17) + x;
+        return (y << 16) + x;
     }
     
     /// @dev Turn a single uint representation of a coordinate into its x and y parts.
@@ -44,20 +44,20 @@ contract DWorldBase is DWorldAccessControl {
     function identifierToCoordinate(uint256 identifier) public pure returns(uint256 x, uint256 y) {
         require(validIdentifier(identifier));
     
-        y = identifier >> 17;
-        x = identifier - (y << 17);
+        y = identifier >> 16;
+        x = identifier - (y << 16);
     }
     
     /// @dev Test whether the coordinate is valid.
     /// @param x The x-part of the coordinate to test.
     /// @param y The y-part of the coordinate to test.
     function validCoordinate(uint256 x, uint256 y) public pure returns(bool) {
-        return x < 131072 && y < 131072; // 2^17
+        return x < 65536 && y < 65536; // 2^16
     }
     
     /// @dev Test whether an identifier is valid.
     /// @param identifier The identifier to test.
     function validIdentifier(uint256 identifier) public pure returns(bool) {
-        return identifier < 17179869184; // 2^17 * 2^17
+        return identifier < 4294967296; // 2^16 * 2^16
     }
 }

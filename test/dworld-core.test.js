@@ -67,23 +67,23 @@ contract("DWorldCore", function(accounts) {
         
         it("should transform between coordinate and identifier space", async function() {
             assert.equal(await core.coordinateToIdentifier(0, 0), 0);
-            assert.equal(await core.coordinateToIdentifier(23, 46), 6029335); // 2^17 * 46 + 23
-            assert.equal(await core.coordinateToIdentifier(131071, 131071), 17179869183); // 2^17 * (2^17 - 1) + (2^17 - 1)
+            assert.equal(await core.coordinateToIdentifier(23, 46), 3014679); // 2^16 * 46 + 23
+            assert.equal(await core.coordinateToIdentifier(65535, 65535), 4294967295); // 2^16 * (2^16 - 1) + (2^16 - 1)
             
             var coord1 = await core.identifierToCoordinate(0);
             assert.lengthOf(coord1, 2);
             assert.equal(coord1[0], 0);
             assert.equal(coord1[1], 0);
             
-            var coord2 = await core.identifierToCoordinate(6029335);
+            var coord2 = await core.identifierToCoordinate(3014679);
             assert.lengthOf(coord2, 2);
             assert.equal(coord2[0], 23);
             assert.equal(coord2[1], 46);
             
-            var coord3 = await core.identifierToCoordinate(17179869183);
+            var coord3 = await core.identifierToCoordinate(4294967295);
             assert.lengthOf(coord3, 2);
-            assert.equal(coord3[0], 131071);
-            assert.equal(coord3[1], 131071);
+            assert.equal(coord3[0], 65535);
+            assert.equal(coord3[1], 65535);
         });
         
         it("correctly identifies interface signatures", async function() {
@@ -114,8 +114,8 @@ contract("DWorldCore", function(accounts) {
             // First valid id is 0
             await utils.assertRevert(core.claimPlotMultiple([-1], {from: user1, value: 1 * unclaimedPlotPrice}));
             
-            // Last valid id is 17179869183
-            await utils.assertRevert(core.claimPlotMultiple([17179869184], {from: user1, value: 1 * unclaimedPlotPrice}));
+            // Last valid id is 4294967295
+            await utils.assertRevert(core.claimPlotMultiple([4294967296], {from: user1, value: 1 * unclaimedPlotPrice}));
             
             await utils.assertRevert(core.claimPlotMultiple([2000000000000000], {from: user1, value: 1 * unclaimedPlotPrice}));
             
@@ -124,7 +124,7 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("mints extreme (but valid) plots", async function() {
-            await core.claimPlotMultiple([0, 17179869183], {from: user1, value: 2 * unclaimedPlotPrice});
+            await core.claimPlotMultiple([0, 4294967295], {from: user1, value: 2 * unclaimedPlotPrice});
             assert.equal(await core.totalSupply(), 6);
         });
         
@@ -189,11 +189,11 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("creates correct metadata urls", async function() {
-            assert.equal(await core.tokenMetadata(0), "https://dworld.io/plot/00000000000");
-            assert.equal(await core.tokenMetadata(1), "https://dworld.io/plot/00000000001");
-            assert.equal(await core.tokenMetadata(42), "https://dworld.io/plot/00000000042");
-            assert.equal(await core.tokenMetadata(17179869183), "https://dworld.io/plot/17179869183");
-            await utils.assertRevert(core.tokenMetadata(17179869184));
+            assert.equal(await core.tokenMetadata(0), "https://dworld.io/plot/0000000000");
+            assert.equal(await core.tokenMetadata(1), "https://dworld.io/plot/0000000001");
+            assert.equal(await core.tokenMetadata(42), "https://dworld.io/plot/0000000042");
+            assert.equal(await core.tokenMetadata(4294967295), "https://dworld.io/plot/4294967295");
+            await utils.assertRevert(core.tokenMetadata(4294967296));
             await utils.assertRevert(core.tokenMetadata(-1));
         });
     });

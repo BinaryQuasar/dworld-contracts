@@ -46,7 +46,7 @@ contract DWorldToken is DWorldBase, ERC721 {
     /// @param _to The address to transfer the token to.
     /// @param _tokenId The identifier of the token to transfer.
     function _transfer(address _from, address _to, uint256 _tokenId) internal {
-        // The number of plots is capped at 2^17 * 2^17, so this cannot
+        // The number of plots is capped at 2^16 * 2^16, so this cannot
         // be overflowed.
         ownershipTokenCount[_to]++;
         
@@ -216,12 +216,12 @@ contract DWorldToken is DWorldBase, ERC721 {
     function tokenMetadata(uint256 _tokenId) external pure returns (string metadataUrl) {
         require(validIdentifier(_tokenId));
     
-        // Maximum token length in decimals is 11 (17179869183)
-        metadataUrl = "https://dworld.io/plot/xxxxxxxxxxx";
+        // Maximum token length in decimals is 10 (4294967295)
+        metadataUrl = "https://dworld.io/plot/xxxxxxxxxx";
         bytes memory _metadataUrl = bytes(metadataUrl);
         
-        for (uint256 i = 0; i < 11; i++) {
-            _metadataUrl[33 - i] = byte(48 + (_tokenId / 10 ** i) % 10);
+        for (uint256 i = 0; i < 10; i++) {
+            _metadataUrl[32 - i] = byte(48 + (_tokenId / 10 ** i) % 10);
         }
     }
 }
