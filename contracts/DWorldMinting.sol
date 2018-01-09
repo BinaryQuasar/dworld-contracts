@@ -15,7 +15,7 @@ contract DWorldMinting is DWorldRenting {
     /// @notice Buy an unclaimed plot.
     /// @param _tokenId The unclaimed plot to buy.
     function claimPlot(uint256 _tokenId) external payable whenNotPaused {
-        claimPlot(_tokenId, "", "", "", "");
+        claimPlotWithData(_tokenId, "", "", "", "");
     }
        
     /// @notice Buy an unclaimed plot.
@@ -24,17 +24,17 @@ contract DWorldMinting is DWorldRenting {
     /// @param description The description to add to the plot.
     /// @param imageUrl The image url for the plot.
     /// @param infoUrl The info url for the plot.
-    function claimPlot(uint256 _tokenId, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
+    function claimPlotWithData(uint256 _tokenId, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
         uint256[] memory _tokenIds = new uint256[](1);
         _tokenIds[0] = _tokenId;
         
-        claimPlotMultiple(_tokenIds, name, description, imageUrl, infoUrl);
+        claimPlotMultipleWithData(_tokenIds, name, description, imageUrl, infoUrl);
     }
     
     /// @notice Buy unclaimed plots.
     /// @param _tokenIds The unclaimed plots to buy.
-    function claimPlotMultiple(uint256[] _tokenIds) public payable whenNotPaused {
-        claimPlotMultiple(_tokenIds, "", "", "", "");
+    function claimPlotMultiple(uint256[] _tokenIds) external payable whenNotPaused {
+        claimPlotMultipleWithData(_tokenIds, "", "", "", "");
     }
     
     /// @notice Buy unclaimed plots.
@@ -43,7 +43,7 @@ contract DWorldMinting is DWorldRenting {
     /// @param description The description to add to the plots.
     /// @param imageUrl The image url for the plots.
     /// @param infoUrl The info url for the plots.
-    function claimPlotMultiple(uint256[] _tokenIds, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
+    function claimPlotMultipleWithData(uint256[] _tokenIds, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
         uint256 etherRequired = unclaimedPlotPrice.mul(_tokenIds.length);
         
         // Ensure enough ether is supplied.
