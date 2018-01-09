@@ -11,19 +11,39 @@ contract DWorldMinting is DWorldRenting {
     function setUnclaimedPlotPrice(uint256 _unclaimedPlotPrice) external onlyCFO {
         unclaimedPlotPrice = _unclaimedPlotPrice;
     }
-    
+       
     /// @notice Buy an unclaimed plot.
     /// @param _tokenId The unclaimed plot to buy.
     function claimPlot(uint256 _tokenId) external payable whenNotPaused {
+        claimPlot(_tokenId, "", "", "", "");
+    }
+       
+    /// @notice Buy an unclaimed plot.
+    /// @param _tokenId The unclaimed plot to buy.
+    /// @param name The name to give the plot.
+    /// @param description The description to add to the plot.
+    /// @param imageUrl The image url for the plot.
+    /// @param infoUrl The info url for the plot.
+    function claimPlot(uint256 _tokenId, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
         uint256[] memory _tokenIds = new uint256[](1);
         _tokenIds[0] = _tokenId;
         
-        claimPlotMultiple(_tokenIds);
+        claimPlotMultiple(_tokenIds, name, description, imageUrl, infoUrl);
     }
     
     /// @notice Buy unclaimed plots.
     /// @param _tokenIds The unclaimed plots to buy.
     function claimPlotMultiple(uint256[] _tokenIds) public payable whenNotPaused {
+        claimPlotMultiple(_tokenIds, "", "", "", "");
+    }
+    
+    /// @notice Buy unclaimed plots.
+    /// @param _tokenIds The unclaimed plots to buy.
+    /// @param name The name to give the plots.
+    /// @param description The description to add to the plots.
+    /// @param imageUrl The image url for the plots.
+    /// @param infoUrl The info url for the plots.
+    function claimPlotMultiple(uint256[] _tokenIds, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
         uint256 etherRequired = unclaimedPlotPrice.mul(_tokenIds.length);
         
         // Ensure enough ether is supplied.
@@ -47,6 +67,11 @@ contract DWorldMinting is DWorldRenting {
             
             // Create the plot and associate it with the plot identifier
             identifierToPlot[_tokenId].mintedTimestamp = now;
+            identifierToPlot[_tokenId].name = name;
+            identifierToPlot[_tokenId].description = description;
+            identifierToPlot[_tokenId].imageUrl = imageUrl;
+            identifierToPlot[_tokenId].infoUrl = infoUrl;
+            
             plots[offset + i] = uint32(_tokenId);
             
             // Transfer the new plot to the sender.
