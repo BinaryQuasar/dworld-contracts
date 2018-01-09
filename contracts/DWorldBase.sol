@@ -30,6 +30,11 @@ contract DWorldBase is DWorldAccessControl {
     mapping (uint256 => address) identifierToApproved;
     mapping (address => uint256) ownershipTokenCount;
     
+    /// @notice Get all minted plots.
+    function getAllPlots() external view returns(uint32[]) {
+        return plots;
+    }
+    
     /// @dev Represent a 2D coordinate as a single uint.
     /// @param x The x-coordinate.
     /// @param y The y-coordinate.
