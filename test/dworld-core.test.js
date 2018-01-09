@@ -336,6 +336,29 @@ contract("DWorldCore", function(accounts) {
             assert.equal(data[3], 'TestImageUrl');
             assert.equal(data[4], 'TestInfoUrl');
         });
+        
+        it("allows setting data when claiming new plots", async function() {
+            await core.claimPlotWithData(0, "TestName1", "TestDescription1", "ImageUrl1", "InfoUrl1", {from: user1, value: unclaimedPlotPrice});
+            await core.claimPlotMultipleWithData([1, 2], "TestName2", "TestDescription2", "ImageUrl2", "InfoUrl2", {from: user1, value: 2 * unclaimedPlotPrice});
+            
+            var [timestamp0, name0, description0, imageUrl0, infoUrl0] = await core.identifierToPlot(0);
+            assert.equal(name0, "TestName1");
+            assert.equal(description0, "TestDescription1");
+            assert.equal(imageUrl0, "ImageUrl1");
+            assert.equal(infoUrl0, "InfoUrl1");
+            
+            var [timestamp1, name1, description1, imageUrl1, infoUrl1] = await core.identifierToPlot(1);
+            assert.equal(name1, "TestName2");
+            assert.equal(description1, "TestDescription2");
+            assert.equal(imageUrl1, "ImageUrl2");
+            assert.equal(infoUrl1, "InfoUrl2");
+            
+            var [timestamp2, name2, description2, imageUrl2, infoUrl2] = await core.identifierToPlot(2);
+            assert.equal(name1, "TestName2");
+            assert.equal(description1, "TestDescription2");
+            assert.equal(imageUrl1, "ImageUrl2");
+            assert.equal(infoUrl1, "InfoUrl2");
+        });
     });
     
     // Taken in part from
