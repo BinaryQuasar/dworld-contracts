@@ -78,4 +78,15 @@ contract DWorldBase is DWorldAccessControl {
     function validIdentifier(uint256 identifier) public pure returns(bool) {
         return identifier < 4294967296; // 2^16 * 2^16
     }
+    
+    /// @dev Set a plot's data.
+    /// @param identifier The identifier of the plot to set data for.
+    function _setPlotData(uint256 identifier, string name, string description, string imageUrl, string infoUrl) internal {
+        identifierToPlot[identifier].name = name;
+        identifierToPlot[identifier].description = description;
+        identifierToPlot[identifier].imageUrl = imageUrl;
+        identifierToPlot[identifier].infoUrl = infoUrl;
+    
+        Change(identifier, name, description, imageUrl, infoUrl);
+    }
 }

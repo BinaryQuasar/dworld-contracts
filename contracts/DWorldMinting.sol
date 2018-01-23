@@ -67,12 +67,7 @@ contract DWorldMinting is DWorldRenting {
             
             // Create the plot and associate it with the plot identifier
             identifierToPlot[_tokenId].mintedTimestamp = now;
-            identifierToPlot[_tokenId].name = name;
-            identifierToPlot[_tokenId].description = description;
-            identifierToPlot[_tokenId].imageUrl = imageUrl;
-            identifierToPlot[_tokenId].infoUrl = infoUrl;
-            
-            Change(_tokenId, name, description, imageUrl, infoUrl);
+            _setPlotData(_tokenId, name, description, imageUrl, infoUrl);
             
             plots[offset + i] = uint32(_tokenId);
             

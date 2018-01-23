@@ -26,12 +26,7 @@ contract DWorldCore is DWorldAuction {
         require(_owns(msg.sender, _tokenId) && identifierToRentPeriodEndTimestamp[_tokenId] < now || _rents(msg.sender, _tokenId));
     
         // Set the data
-        identifierToPlot[_tokenId].name = name;
-        identifierToPlot[_tokenId].description = description;
-        identifierToPlot[_tokenId].imageUrl = imageUrl;
-        identifierToPlot[_tokenId].infoUrl = infoUrl;
-        
-        Change(_tokenId, name, description, imageUrl, infoUrl);
+        _setPlotData(_tokenId, name, description, imageUrl, infoUrl);
     }
     
     /// @notice Set the data associated with multiple plots.
