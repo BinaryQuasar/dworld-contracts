@@ -35,6 +35,16 @@ contract DWorldBase is DWorldAccessControl {
         return plots;
     }
     
+    /// @notice Get a plot by its identifier.
+    function getPlot(uint256 identifier)
+        external
+        view
+        returns (uint256, string, string, string, string)
+    {
+        Plot storage plot = identifierToPlot[identifier];
+        return (plot.mintedTimestamp, plot.name, plot.description, plot.imageUrl, plot.infoUrl);
+    }
+    
     /// @dev Represent a 2D coordinate as a single uint.
     /// @param x The x-coordinate.
     /// @param y The y-coordinate.
