@@ -30,6 +30,9 @@ contract DWorldBase is DWorldAccessControl {
     mapping (uint256 => address) identifierToApproved;
     mapping (address => uint256) ownershipTokenCount;
     
+    /// @dev Event fired when a plot's data are changed.
+    event Change(uint256 indexed tokenId, string name, string description, string imageUrl, string infoUrl);
+    
     /// @notice Get all minted plots.
     function getAllPlots() external view returns(uint32[]) {
         return plots;

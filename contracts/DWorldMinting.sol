@@ -72,6 +72,8 @@ contract DWorldMinting is DWorldRenting {
             identifierToPlot[_tokenId].imageUrl = imageUrl;
             identifierToPlot[_tokenId].infoUrl = infoUrl;
             
+            Change(_tokenId, name, description, imageUrl, infoUrl);
+            
             plots[offset + i] = uint32(_tokenId);
             
             // Transfer the new plot to the sender.

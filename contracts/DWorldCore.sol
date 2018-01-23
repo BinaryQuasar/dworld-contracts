@@ -30,6 +30,8 @@ contract DWorldCore is DWorldAuction {
         identifierToPlot[_tokenId].description = description;
         identifierToPlot[_tokenId].imageUrl = imageUrl;
         identifierToPlot[_tokenId].infoUrl = infoUrl;
+        
+        Change(_tokenId, name, description, imageUrl, infoUrl);
     }
     
     /// @notice Set the data associated with multiple plots.
