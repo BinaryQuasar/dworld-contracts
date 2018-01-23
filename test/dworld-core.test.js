@@ -189,10 +189,11 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("creates correct metadata urls", async function() {
-            assert.equal(await core.tokenMetadata(0), "https://dworld.io/plot/0000000000");
-            assert.equal(await core.tokenMetadata(1), "https://dworld.io/plot/0000000001");
-            assert.equal(await core.tokenMetadata(42), "https://dworld.io/plot/0000000042");
-            assert.equal(await core.tokenMetadata(4294967295), "https://dworld.io/plot/4294967295");
+            assert.equal(await core.tokenMetadata(0), "https://dworld.io/plot/00000/00000");
+            assert.equal(await core.tokenMetadata(1), "https://dworld.io/plot/00001/00000");
+            assert.equal(await core.tokenMetadata(42), "https://dworld.io/plot/00042/00000");
+            assert.equal(await core.tokenMetadata(23074867), "https://dworld.io/plot/06195/00352");
+            assert.equal(await core.tokenMetadata(4294967295), "https://dworld.io/plot/65535/65535");
             await utils.assertRevert(core.tokenMetadata(4294967296));
             await utils.assertRevert(core.tokenMetadata(-1));
         });
