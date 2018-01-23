@@ -1,4 +1,20 @@
+const HDWalletProvider = require("truffle-hdwallet-provider");
+const config = require('./config.json');
+
 module.exports = {
-  // See <http://truffleframework.com/docs/advanced/configuration>
-  // to customize your Truffle configuration!
+  networks: {
+    rinkeby: {
+      provider: function() {
+        return new HDWalletProvider(config.mnemonic, config.rinkebyProvider);
+      },
+      network_id: '4',
+      gasPrice: 2500000000, // 2.5 gwei
+    },
+  },
+  solc: {
+    optimizer: {
+      enabled: true,
+      runs: 200,
+    },
+  },
 };
