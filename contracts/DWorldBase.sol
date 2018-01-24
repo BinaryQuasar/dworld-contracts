@@ -82,10 +82,25 @@ contract DWorldBase is DWorldAccessControl {
     /// @dev Set a plot's data.
     /// @param identifier The identifier of the plot to set data for.
     function _setPlotData(uint256 identifier, string name, string description, string imageUrl, string infoUrl) internal {
-        identifierToPlot[identifier].name = name;
-        identifierToPlot[identifier].description = description;
-        identifierToPlot[identifier].imageUrl = imageUrl;
-        identifierToPlot[identifier].infoUrl = infoUrl;
+        Plot storage plot = identifierToPlot[identifier];
+        
+        // Test strings for change before storing them. Uses dramatically
+        // less gas if even just one of the parameters did not change.
+        if (keccak256(plot.name) != keccak256(name)) {
+            plot.name = name;
+        }
+        
+        if (keccak256(plot.description) != keccak256(description)) {
+            plot.description = description;
+        }
+        
+        if (keccak256(plot.imageUrl) != keccak256(imageUrl)) {
+            plot.imageUrl = imageUrl;
+        }
+        
+        if (keccak256(plot.infoUrl) != keccak256(infoUrl)) {
+            plot.infoUrl = infoUrl;
+        }
     
         Change(identifier, name, description, imageUrl, infoUrl);
     }
