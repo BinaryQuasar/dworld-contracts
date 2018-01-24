@@ -210,6 +210,29 @@ contract DWorldToken is DWorldBase, ERC721 {
         }
     }
     
+    /// @notice Returns a plot identifier of the owner at the given index.
+    /// @param _owner The address of the owner we want to get a token for.
+    /// @param _index The index of the token we want.
+    function tokenOfOwnerByIndex(address _owner, uint256 _index) view returns (uint256) {
+        // The index should be valid.
+        require(_index < balanceOf(_owner));
+
+        // Loop through all plots, accounting the number of plots of the owner we've seen.
+        uint256 seen = 0;
+        uint256 totalPlots = totalSupply();
+        
+        for (uint256 plotNumber = 0; plotNumber < totalPlots; plotNumber++) {
+            uint256 identifier = plots[plotNumber];
+            if (identifierToOwner[identifier] == _owner) {
+                if (seen == _index) {
+                    return identifier;
+                }
+                
+                seen++;
+            }
+        }
+    }
+    
     /// @notice Returns an (off-chain) metadata url for the given token.
     /// @param _tokenId The identifier of the token to get the metadata
     /// url for.
