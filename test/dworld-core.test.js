@@ -37,7 +37,7 @@ contract("DWorldCore", function(accounts) {
         debug("Buying some tokens");
         
         // User1 mints a few tokens by sending Ether
-        core.claimPlotMultiple([plotA, plotB, plotC, plotD], {from: user1, value: 4 * unclaimedPlotPrice});
+        await core.claimPlotMultiple([plotA, plotB, plotC, plotD], {from: user1, value: 4 * unclaimedPlotPrice});
     }
     
     async function deployAuctionContracts() {
@@ -46,8 +46,8 @@ contract("DWorldCore", function(accounts) {
         saleAuction = await SaleAuction.new(core.address, 3500, {from: owner, gas: 5000000});
         rentAuction = await RentAuction.new(core.address, 3500, {from: owner, gas: 5000000});
         
-        core.setSaleAuctionContractAddress(saleAuction.address);
-        core.setRentAuctionContractAddress(rentAuction.address);
+        await core.setSaleAuctionContractAddress(saleAuction.address);
+        await core.setRentAuctionContractAddress(rentAuction.address);
     }
     
     describe("Initial state", function() {
