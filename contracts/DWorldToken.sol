@@ -28,10 +28,14 @@ contract DWorldToken is DWorldBase, ERC721 {
     }
     
     /// @dev Approve a give address to take ownership of a token.
+    /// @param _from The address approving taking ownership.
     /// @param _to The address to approve taking ownership.
     /// @param _tokenId The plot identifier to give approval for.
-    function _approve(address _to, uint256 _tokenId) internal {
+    function _approve(address _from, address _to, uint256 _tokenId) internal {
         identifierToApproved[_tokenId] = _to;
+        
+        // Emit event.
+        Approval(_from, _to, _tokenId);
     }
     
     /// @dev Checks if a given address has approval to take ownership of a plot.
@@ -111,10 +115,7 @@ contract DWorldToken is DWorldBase, ERC721 {
             require(_owns(msg.sender, _tokenId));
             
             // Perform the approval.
-            _approve(_to, _tokenId);
-            
-            // Emit event.
-            Approval(msg.sender, _to, _tokenId);
+            _approve(msg.sender, _to, _tokenId);
         }
     }
     

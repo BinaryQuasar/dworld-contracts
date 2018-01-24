@@ -41,7 +41,7 @@ contract DWorldAuction is DWorldMinting {
         require(_owns(msg.sender, _tokenId));
     
         // Approve the token for transferring to the sale auction.
-        _approve(address(saleAuctionContract), _tokenId);
+        _approve(msg.sender, address(saleAuctionContract), _tokenId);
     
         // Auction contract checks input values (throws if invalid) and places the token into escrow.
         saleAuctionContract.createAuction(_tokenId, _startPrice, _endPrice, _duration);
@@ -60,7 +60,7 @@ contract DWorldAuction is DWorldMinting {
         require(_owns(msg.sender, _tokenId));
         
         // Approve the token for transferring to the rent auction.
-        _approve(address(rentAuctionContract), _tokenId);
+        _approve(msg.sender, address(rentAuctionContract), _tokenId);
         
         // Throws if the auction is invalid (e.g. token is already),
         // and places the token into escrow.
