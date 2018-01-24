@@ -213,7 +213,7 @@ contract DWorldToken is DWorldBase, ERC721 {
     /// @notice Returns a plot identifier of the owner at the given index.
     /// @param _owner The address of the owner we want to get a token for.
     /// @param _index The index of the token we want.
-    function tokenOfOwnerByIndex(address _owner, uint256 _index) view returns (uint256) {
+    function tokenOfOwnerByIndex(address _owner, uint256 _index) external view returns (uint256) {
         // The index should be valid.
         require(_index < balanceOf(_owner));
 
