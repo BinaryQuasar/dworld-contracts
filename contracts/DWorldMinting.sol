@@ -69,17 +69,17 @@ contract DWorldMinting is DWorldRenting {
                 // No ether is required.
                 etherRequired = 0;
             } else {
-                uint256 freeAmount = buyAmount - freeClaimAllowance[msg.sender];
+                uint256 freeAmount = freeClaimAllowance[msg.sender];
                 
                 // The full allowance has been used.
                 delete freeClaimAllowance[msg.sender];
                 
-                // Cannot underflow, as freeAmount < _tokenIds.length.
-                etherRequired = unclaimedPlotPrice.mul(_tokenIds.length - freeAmount);
+                // Cannot underflow, as freeAmount <= buyAmount.
+                etherRequired = unclaimedPlotPrice.mul(buyAmount - freeAmount);
             }
         } else {
             // The sender does not have a free claim allowance.
-            etherRequired = unclaimedPlotPrice.mul(_tokenIds.length);
+            etherRequired = unclaimedPlotPrice.mul(buyAmount);
         }
         
         // Ensure enough ether is supplied.
