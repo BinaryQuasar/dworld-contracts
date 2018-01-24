@@ -483,6 +483,37 @@ contract("DWorldCore", function(accounts) {
         });
     });
     
+    describe("Allowance", function() {
+        beforeEach(deployContract);
+        beforeEach(mintTokens);
+        beforeEach(async function setCFO() {
+            await core.setCFO(cfo, {from: owner});
+        });
+        
+        it("should prevent non-CFO from setting free claim allowance", async function() {
+            await utils.assertRevert(core.setFreeClaimAllowance(user1, 3, {from: owner}));
+            await utils.assertRevert(core.setFreeClaimAllowance(cfo, 3, {from: user1}));
+        });
+        
+        it("allows CFO to set free claim allowance", async function() {
+            await core.setFreeClaimAllowance(user1, 3, {from: cfo});
+            assert.equal(await core.freeClaimAllowanceOf(user1), 3);
+        });
+        
+        it("allows free claims", async function() {
+            await core.setFreeClaimAllowance(user1, 3, {from: cfo});
+            await core.claimPlot(0, {from: user1});
+        });
+        
+        it("correctly subtracts free claim allowance", async function() {
+            await core.setFreeClaimAllowance(user1, 3, {from: cfo});
+            await core.claimPlot(0, {from: user1});
+            assert.equal(await core.freeClaimAllowanceOf(user1), 2);
+            await core.claimPlotMultiple([1, 2], {from: user1});
+            assert.equal(await core.freeClaimAllowanceOf(user1), 0);
+        });
+    });
+    
     describe("Auctions", function() {
         before(deployContract);
         before(async function setCFO() {
