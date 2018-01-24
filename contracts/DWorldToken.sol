@@ -198,7 +198,7 @@ contract DWorldToken is DWorldBase, ERC721 {
             uint256 totalPlots = totalSupply();
             uint256 resultIndex = 0;
             
-            for (uint256 plotNumber = 0; plotNumber <= totalPlots; plotNumber++) {
+            for (uint256 plotNumber = 0; plotNumber < totalPlots; plotNumber++) {
                 uint256 identifier = plots[plotNumber];
                 if (identifierToOwner[identifier] == _owner) {
                     result[resultIndex] = identifier;
