@@ -39,6 +39,9 @@ contract DWorldAuction is DWorldMinting {
         whenNotPaused
     {
         require(_owns(msg.sender, _tokenId));
+        
+        // Prevent creating a sale auction if not sale auction contract is configured.
+        require(address(saleAuctionContract) != address(0));
     
         // Approve the token for transferring to the sale auction.
         _approve(msg.sender, address(saleAuctionContract), _tokenId);
@@ -59,10 +62,13 @@ contract DWorldAuction is DWorldMinting {
     {
         require(_owns(msg.sender, _tokenId));
         
+        // Prevent creating a rent auction if not rent auction contract is configured.
+        require(address(rentAuctionContract) != address(0));
+        
         // Approve the token for transferring to the rent auction.
         _approve(msg.sender, address(rentAuctionContract), _tokenId);
         
-        // Throws if the auction is invalid (e.g. token is already),
+        // Throws if the auction is invalid (e.g. token is already rented out),
         // and places the token into escrow.
         rentAuctionContract.createAuction(_tokenId, _startPrice, _endPrice, _duration, _rentPeriod);
     }
