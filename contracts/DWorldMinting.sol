@@ -101,14 +101,16 @@ contract DWorldMinting is DWorldRenting {
             // non-zero address).
             require(identifierToOwner[_tokenId] == address(0));
             
-            // Create the plot and associate it with the plot identifier
+            // Create the plot and associate it with the plot identifier.
             identifierToPlot[_tokenId].mintedTimestamp = now;
-            _setPlotData(_tokenId, name, description, imageUrl, infoUrl);
             
             plots[offset + i] = uint32(_tokenId);
             
             // Transfer the new plot to the sender.
             _transfer(address(0), msg.sender, _tokenId);
+            
+            // Set the plot data.
+            _setPlotData(_tokenId, name, description, imageUrl, infoUrl);
         }
         
         // Calculate the excess ether sent
