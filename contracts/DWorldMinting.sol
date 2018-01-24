@@ -5,11 +5,25 @@ import "./DWorldRenting.sol";
 /// @dev Holds functionality for minting new plot tokens.
 contract DWorldMinting is DWorldRenting {
     uint256 public unclaimedPlotPrice = 0.0025 ether;
+    mapping (address => uint256) freeClaimAllowance;
     
     /// @notice Sets the new price for unclaimed plots.
     /// @param _unclaimedPlotPrice The new price for unclaimed plots.
     function setUnclaimedPlotPrice(uint256 _unclaimedPlotPrice) external onlyCFO {
         unclaimedPlotPrice = _unclaimedPlotPrice;
+    }
+    
+    /// @notice Set the free claim allowance for an address.
+    /// @param addr The address to set the free claim allowance for.
+    /// @param allowance The free claim allowance to set.
+    function setFreeClaimAllowance(address addr, uint256 allowance) external onlyCFO {
+        freeClaimAllowance[addr] = allowance;
+    }
+    
+    /// @notice Get the free claim allowance of an address.
+    /// @param addr The address to get the free claim allowance of.
+    function freeClaimAllowanceOf(address addr) external view returns (uint256) {
+        return freeClaimAllowance[addr];
     }
        
     /// @notice Buy an unclaimed plot.
@@ -44,7 +58,29 @@ contract DWorldMinting is DWorldRenting {
     /// @param imageUrl The image url for the plots.
     /// @param infoUrl The info url for the plots.
     function claimPlotMultipleWithData(uint256[] _tokenIds, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
-        uint256 etherRequired = unclaimedPlotPrice.mul(_tokenIds.length);
+        uint256 buyAmount = _tokenIds.length;
+        uint256 etherRequired;
+        if (freeClaimAllowance[msg.sender] > 0) {
+            // The sender has a free claim allowance.
+            if (freeClaimAllowance[msg.sender] > buyAmount) {
+                // Subtract from allowance.
+                freeClaimAllowance[msg.sender] -= buyAmount;
+                
+                // No ether is required.
+                etherRequired = 0;
+            } else {
+                uint256 freeAmount = buyAmount - freeClaimAllowance[msg.sender];
+                
+                // The full allowance has been used.
+                delete freeClaimAllowance[msg.sender];
+                
+                // Cannot underflow, as freeAmount < _tokenIds.length.
+                etherRequired = unclaimedPlotPrice.mul(_tokenIds.length - freeAmount);
+            }
+        } else {
+            // The sender does not have a free claim allowance.
+            etherRequired = unclaimedPlotPrice.mul(_tokenIds.length);
+        }
         
         // Ensure enough ether is supplied.
         require(msg.value >= etherRequired);
