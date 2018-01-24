@@ -512,6 +512,68 @@ contract("DWorldCore", function(accounts) {
             await core.claimPlotMultiple([1, 2], {from: user1});
             assert.equal(await core.freeClaimAllowanceOf(user1), 0);
         });
+        
+        it("allows using the entire allowance in one bulk mint", async function() {
+            await core.setFreeClaimAllowance(user1, 6, {from: cfo});
+            await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1});
+        });
+        
+        it("does not allow one user to make use of another user's free claim allowance", async function() {
+            await core.setFreeClaimAllowance(user1, 3, {from: cfo});
+            await utils.assertRevert(core.claimPlotMultiple([1, 2], {from: user2}));
+            await core.claimPlotMultiple([1, 2], {from: user1});
+        });
+        
+        it("should prevent minting more plots for free than the user has allowance for", async function() {
+            // No allowance set.
+            await utils.assertRevert(core.claimPlotMultiple([1, 2], {from: user1}));
+            
+            await core.setFreeClaimAllowance(user1, 3, {from: cfo});
+            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4], {from: user1}));
+            
+            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4], {from: user1, value: unclaimedPlotPrice.mul(0.5)}));
+            
+            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: unclaimedPlotPrice.mul(2)}));
+        });
+        
+        it("allows minting more plots than the user has allowance for given enough ether", async function() {
+            await core.setFreeClaimAllowance(user1, 3, {from: cfo});
+            await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: unclaimedPlotPrice.mul(3)});
+        });
+        
+        it("should refund all ether when paying in full with allowance", async function() {
+            await core.setFreeClaimAllowance(user1, 3, {from: cfo});
+            
+            var balanceBefore = await web3.eth.getBalance(user1);
+            
+            // Overspend by 1.35 ether
+            var overspend = web3.toWei(new BigNumber("1.35"), 'ether');
+            var tx = await core.claimPlotMultiple([1, 2, 3], {from: user1, value: overspend});
+            var balanceAfter = await web3.eth.getBalance(user1);
+            
+            // Calculate gas cost for the transaction
+            var gasCost = gasPrice.mul(tx.receipt.gasUsed);
+            
+            // balanceBefore - balanceAfter - gasCost = price paid for minting
+            assert.deepEqual(balanceBefore.minus(balanceAfter).minus(gasCost).toNumber(), 0);
+        });
+        
+        it("should refund exactly the correct amount of ether when paying in part with allowance", async function() {
+            await core.setFreeClaimAllowance(user1, 3, {from: cfo});
+            
+            var balanceBefore = await web3.eth.getBalance(user1);
+            
+            // Overspend by 1.35 ether
+            var overspend = web3.toWei(new BigNumber("1.35"), 'ether');
+            var tx = await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: unclaimedPlotPrice.mul(3).add(overspend)});
+            var balanceAfter = await web3.eth.getBalance(user1);
+            
+            // Calculate gas cost for the transaction
+            var gasCost = gasPrice.mul(tx.receipt.gasUsed);
+            
+            // balanceBefore - balanceAfter - gasCost = price paid for minting
+            assert.deepEqual(balanceBefore.minus(balanceAfter).minus(gasCost).toNumber(), unclaimedPlotPrice.mul(3).toNumber());
+        });
     });
     
     describe("Auctions", function() {
