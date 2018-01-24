@@ -38,7 +38,8 @@ contract DWorldBase is DWorldAccessControl {
         return plots;
     }
     
-    /// @notice Get a plot by its identifier.
+    /// @notice Get a plot by its identifier. Alias for identifierToPlot with better Web3 compatibility..
+    /// @param identifier The identifier of the plot to get.
     function getPlot(uint256 identifier)
         external
         view
