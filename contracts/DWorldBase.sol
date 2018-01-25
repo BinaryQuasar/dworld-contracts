@@ -6,15 +6,6 @@ import "./DWorldAccessControl.sol";
 /// @dev Defines base data structures for DWorld.
 contract DWorldBase is DWorldAccessControl {
     using SafeMath for uint256;
-
-    /// Plot data
-    struct Plot {
-        uint256 mintedTimestamp;
-        string name;
-        string description;
-        string imageUrl;
-        string infoUrl;
-    }
     
     /// @dev All minted plots (array of plot identifiers). There are
     /// 2^16 * 2^16 possible plots (covering the entire world), thus
@@ -25,28 +16,21 @@ contract DWorldBase is DWorldAccessControl {
     /// gas cost for minting).
     uint32[] public plots;
     
-    mapping (uint256 => Plot) public identifierToPlot;
     mapping (uint256 => address) identifierToOwner;
     mapping (uint256 => address) identifierToApproved;
     mapping (address => uint256) ownershipTokenCount;
     
-    /// @dev Event fired when a plot's data are changed.
-    event Change(uint256 indexed tokenId, string name, string description, string imageUrl, string infoUrl);
+    /// @dev Event fired when a plot's data are changed. The plot
+    /// data are not stored in the contract directly, instead the
+    /// data are logged to the block. This gives significant
+    /// reductions in gas requirements (~75k for minting with data
+    /// instead of ~180k). However, it also means plot data are
+    /// not available from *within* other contracts.
+    event SetData(uint256 indexed tokenId, string name, string description, string imageUrl, string infoUrl);
     
     /// @notice Get all minted plots.
     function getAllPlots() external view returns(uint32[]) {
         return plots;
-    }
-    
-    /// @notice Get a plot by its identifier. Alias for identifierToPlot with better Web3 compatibility..
-    /// @param identifier The identifier of the plot to get.
-    function getPlot(uint256 identifier)
-        external
-        view
-        returns (uint256, string, string, string, string)
-    {
-        Plot storage plot = identifierToPlot[identifier];
-        return (plot.mintedTimestamp, plot.name, plot.description, plot.imageUrl, plot.infoUrl);
     }
     
     /// @dev Represent a 2D coordinate as a single uint.
@@ -83,26 +67,6 @@ contract DWorldBase is DWorldAccessControl {
     /// @dev Set a plot's data.
     /// @param identifier The identifier of the plot to set data for.
     function _setPlotData(uint256 identifier, string name, string description, string imageUrl, string infoUrl) internal {
-        Plot storage plot = identifierToPlot[identifier];
-        
-        // Test strings for change before storing them. Uses dramatically
-        // less gas if even just one of the parameters did not change.
-        if (keccak256(plot.name) != keccak256(name)) {
-            plot.name = name;
-        }
-        
-        if (keccak256(plot.description) != keccak256(description)) {
-            plot.description = description;
-        }
-        
-        if (keccak256(plot.imageUrl) != keccak256(imageUrl)) {
-            plot.imageUrl = imageUrl;
-        }
-        
-        if (keccak256(plot.infoUrl) != keccak256(infoUrl)) {
-            plot.infoUrl = infoUrl;
-        }
-    
-        Change(identifier, name, description, imageUrl, infoUrl);
+        SetData(identifier, name, description, imageUrl, infoUrl);
     }
 }

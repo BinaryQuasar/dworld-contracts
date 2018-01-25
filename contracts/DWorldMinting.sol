@@ -101,9 +101,7 @@ contract DWorldMinting is DWorldRenting {
             // non-zero address).
             require(identifierToOwner[_tokenId] == address(0));
             
-            // Create the plot and associate it with the plot identifier.
-            identifierToPlot[_tokenId].mintedTimestamp = now;
-            
+            // Create the plot
             plots[offset + i] = uint32(_tokenId);
             
             // Transfer the new plot to the sender.

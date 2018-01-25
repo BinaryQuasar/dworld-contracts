@@ -272,29 +272,24 @@ contract("DWorldCore", function(accounts) {
         beforeEach(deployContract);
         beforeEach(mintTokens);
         
-        it("is initially empty", async function() {            
-            var data = await core.identifierToPlot(plotA);
-            assert.lengthOf(data, 5);
-            // data[0] is equal to the plot's creation time
-            assert.equal(data[1], '');
-            assert.equal(data[2], '');
-            assert.equal(data[3], '');
-            assert.equal(data[4], '');
-        });
-        
         it("can not be updated by non-owner", async function() {
             await utils.assertRevert(core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user2}));
         });
         
         it("can be updated by owner", async function() {
+            var watcher = core.SetData();
+            
             await core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1});
-            var data = await core.identifierToPlot(plotA);
-            assert.lengthOf(data, 5);
-            // data[0] is equal to the plot's creation time
-            assert.equal(data[1], 'TestName');
-            assert.equal(data[2], 'TestDescription');
-            assert.equal(data[3], 'TestImageUrl');
-            assert.equal(data[4], 'TestInfoUrl');
+            
+            var logs = await watcher.get();
+            assert.equal(logs.length, 1);
+            
+            var data = logs[0].args;
+            assert.equal(data.tokenId, plotA);
+            assert.equal(data.name, "TestName");
+            assert.equal(data.description, "TestDescription");
+            assert.equal(data.imageUrl, 'TestImageUrl');
+            assert.equal(data.infoUrl, 'TestInfoUrl');
         });
         
         it("should prevent updating by owner if a renter is assigned", async function() {
@@ -305,14 +300,19 @@ contract("DWorldCore", function(accounts) {
         it("allows renter to update plot data", async function() {
             await core.rentOut(user2, 1800, plotA, {from: user1});
             
+            var watcher = core.SetData();
+            
             await core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user2});
-            var data = await core.identifierToPlot(plotA);
-            assert.lengthOf(data, 5);
-            // data[0] is equal to the plot's creation time
-            assert.equal(data[1], 'TestName');
-            assert.equal(data[2], 'TestDescription');
-            assert.equal(data[3], 'TestImageUrl');
-            assert.equal(data[4], 'TestInfoUrl');
+            
+            var logs = await watcher.get();
+            assert.equal(logs.length, 1);
+            
+            var data = logs[0].args;
+            assert.equal(data.tokenId, plotA);
+            assert.equal(data.name, "TestName");
+            assert.equal(data.description, "TestDescription");
+            assert.equal(data.imageUrl, 'TestImageUrl');
+            assert.equal(data.infoUrl, 'TestInfoUrl');
         });
         
         it("should prevent renter from updating plot data after rent period has expired", async function() {
@@ -328,37 +328,54 @@ contract("DWorldCore", function(accounts) {
             
             await utils.increaseTime(65);
             
+            var watcher = core.SetData();
+            
             await core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1});
-            var data = await core.identifierToPlot(plotA);
-            assert.lengthOf(data, 5);
-            // data[0] is equal to the plot's creation time
-            assert.equal(data[1], 'TestName');
-            assert.equal(data[2], 'TestDescription');
-            assert.equal(data[3], 'TestImageUrl');
-            assert.equal(data[4], 'TestInfoUrl');
+            
+            var logs = await watcher.get();
+            assert.equal(logs.length, 1);
+            
+            var data = logs[0].args;
+            assert.equal(data.tokenId, plotA);
+            assert.equal(data.name, "TestName");
+            assert.equal(data.description, "TestDescription");
+            assert.equal(data.imageUrl, 'TestImageUrl');
+            assert.equal(data.infoUrl, 'TestInfoUrl');
         });
         
         it("allows setting data when claiming new plots", async function() {
+            var watcher = core.SetData();
+            
             await core.claimPlotWithData(0, "TestName1", "TestDescription1", "ImageUrl1", "InfoUrl1", {from: user1, value: unclaimedPlotPrice});
+            
+            var logs = await watcher.get();
+            assert.equal(logs.length, 1);
+            
+            var data = logs[0].args;
+            assert.equal(data.tokenId, 0);
+            assert.equal(data.name, "TestName1");
+            assert.equal(data.description, "TestDescription1");
+            assert.equal(data.imageUrl, 'ImageUrl1');
+            assert.equal(data.infoUrl, 'InfoUrl1');
+            
             await core.claimPlotMultipleWithData([1, 2], "TestName2", "TestDescription2", "ImageUrl2", "InfoUrl2", {from: user1, value: 2 * unclaimedPlotPrice});
             
-            var [timestamp0, name0, description0, imageUrl0, infoUrl0] = await core.identifierToPlot(0);
-            assert.equal(name0, "TestName1");
-            assert.equal(description0, "TestDescription1");
-            assert.equal(imageUrl0, "ImageUrl1");
-            assert.equal(infoUrl0, "InfoUrl1");
+            logs = await watcher.get();
+            assert.equal(logs.length, 2);
             
-            var [timestamp1, name1, description1, imageUrl1, infoUrl1] = await core.identifierToPlot(1);
-            assert.equal(name1, "TestName2");
-            assert.equal(description1, "TestDescription2");
-            assert.equal(imageUrl1, "ImageUrl2");
-            assert.equal(infoUrl1, "InfoUrl2");
+            data = logs[0].args;
+            assert.equal(data.tokenId, 1);
+            assert.equal(data.name, "TestName2");
+            assert.equal(data.description, "TestDescription2");
+            assert.equal(data.imageUrl, 'ImageUrl2');
+            assert.equal(data.infoUrl, 'InfoUrl2');
             
-            var [timestamp2, name2, description2, imageUrl2, infoUrl2] = await core.identifierToPlot(2);
-            assert.equal(name1, "TestName2");
-            assert.equal(description1, "TestDescription2");
-            assert.equal(imageUrl1, "ImageUrl2");
-            assert.equal(infoUrl1, "InfoUrl2");
+            data = logs[1].args;
+            assert.equal(data.tokenId, 2);
+            assert.equal(data.name, "TestName2");
+            assert.equal(data.description, "TestDescription2");
+            assert.equal(data.imageUrl, 'ImageUrl2');
+            assert.equal(data.infoUrl, 'InfoUrl2');
         });
     });
     
