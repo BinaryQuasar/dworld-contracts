@@ -4,7 +4,7 @@ import "./DWorldToken.sol";
 
 /// @dev Implements renting functionality.
 contract DWorldRenting is DWorldToken {
-    event Rented(address indexed renter, uint256 indexed tokenId, uint256 rentPeriod);
+    event Rent(address indexed renter, uint256 indexed tokenId, uint256 rentPeriod);
     mapping (uint256 => address) identifierToRenter;
     mapping (uint256 => uint256) identifierToRentPeriodEndTimestamp;
 
@@ -24,7 +24,7 @@ contract DWorldRenting is DWorldToken {
         identifierToRenter[_tokenId] = _to;
         identifierToRentPeriodEndTimestamp[_tokenId] = now.add(_rentPeriod);
         
-        Rented(_to, _tokenId, _rentPeriod);
+        Rent(_to, _tokenId, _rentPeriod);
     }
     
     /// @notice Rents a plot out to another address.
