@@ -62,8 +62,8 @@ contract ClockAuction is ClockAuctionBase, Pausable {
         // Caller must either be the token contract or the owner of the token
         // to prevent abuse.
         require(
-            msg.sender == address(tokenContract)
-            || msg.sender == tokenOwner
+            msg.sender == address(tokenContract) ||
+            msg.sender == tokenOwner
         );
     
         // The duration of the auction must be at least 60 seconds.

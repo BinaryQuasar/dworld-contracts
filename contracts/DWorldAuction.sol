@@ -40,7 +40,7 @@ contract DWorldAuction is DWorldMinting {
     {
         require(_owns(msg.sender, _tokenId));
         
-        // Prevent creating a sale auction if not sale auction contract is configured.
+        // Prevent creating a sale auction if no sale auction contract is configured.
         require(address(saleAuctionContract) != address(0));
     
         // Approve the token for transferring to the sale auction.
@@ -62,7 +62,7 @@ contract DWorldAuction is DWorldMinting {
     {
         require(_owns(msg.sender, _tokenId));
         
-        // Prevent creating a rent auction if not rent auction contract is configured.
+        // Prevent creating a rent auction if no rent auction contract is configured.
         require(address(rentAuctionContract) != address(0));
         
         // Approve the token for transferring to the rent auction.
