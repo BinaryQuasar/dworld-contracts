@@ -669,13 +669,13 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("should prevent non-CFO users from withdrawing auction funds to the core contract", async function() {
-            await utils.assertRevert(core.withdrawAuctionBalances({from: owner}));
-            await utils.assertRevert(core.withdrawAuctionBalances({from: user1}));
+            await utils.assertRevert(core.withdrawFreeAuctionBalances({from: owner}));
+            await utils.assertRevert(core.withdrawFreeAuctionBalances({from: user1}));
         });
         
         it("successfully withdraws auction funds to the core contract", async function() {            
             var balanceBefore = await web3.eth.getBalance(core.address);
-            await core.withdrawAuctionBalances({from: cfo});
+            await core.withdrawFreeAuctionBalances({from: cfo});
             
             var balanceAfter = await web3.eth.getBalance(core.address);
             

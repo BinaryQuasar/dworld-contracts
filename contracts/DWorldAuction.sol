@@ -75,7 +75,7 @@ contract DWorldAuction is DWorldMinting {
     
     /// @notice Allow the CFO to capture the free balance available
     /// in the auction contracts.
-    function withdrawAuctionBalances() external onlyCFO {
+    function withdrawFreeAuctionBalances() external onlyCFO {
         saleAuctionContract.withdrawFreeBalance();
         rentAuctionContract.withdrawFreeBalance();
     }
