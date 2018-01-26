@@ -80,6 +80,20 @@ contract DWorldAuction is DWorldMinting {
         rentAuctionContract.withdrawFreeBalance();
     }
     
+    /// @notice Allow withdrawing balances from the auction contracts
+    /// in a single step.
+    function withdrawAuctionBalances() external {
+        // Withdraw from the sale contract if the sender is owed Ether.
+        if (saleAuctionContract.addressToEtherOwed(msg.sender) > 0) {
+            saleAuctionContract.withdrawAuctionBalance(msg.sender);
+        }
+        
+        // Withdraw from the rent contract if the sender is owed Ether.
+        if (rentAuctionContract.addressToEtherOwed(msg.sender) > 0) {
+            rentAuctionContract.withdrawAuctionBalance(msg.sender);
+        }
+    }
+    
     /// @dev This contract is only payable by the auction contracts.
     function() public payable {
         require(

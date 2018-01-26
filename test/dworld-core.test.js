@@ -682,6 +682,43 @@ contract("DWorldCore", function(accounts) {
             var totalReceived = totalPaid.minus(totalPrice).add(totalPrice.times(0.035));
             assert.equal(balanceAfter.minus(balanceBefore).toNumber(), totalReceived.toNumber());
         });
+        
+        it("allows single-step withdrawal of outstanding Ether on both auction contracts", async function() {
+            var saleProceedsOwed = await saleAuction.addressToEtherOwed(user1);
+            var rentProceedsOwed = await rentAuction.addressToEtherOwed(user1);
+            
+            var balanceBefore = await web3.eth.getBalance(user1);
+            var tx = await core.withdrawAuctionBalances({from: user1});
+            
+            var balanceAfter = await web3.eth.getBalance(user1);
+            
+            // Calculate gas cost for the transaction
+            var gasCost = gasPrice.mul(tx.receipt.gasUsed);
+            
+            assert.deepEqual(balanceAfter.minus(balanceBefore).plus(gasCost).toNumber(), saleProceedsOwed.plus(rentProceedsOwed).toNumber());
+        });
+        
+        it("should not transfer funds to users without outstanding balance", async function() {
+            var balanceBefore = await web3.eth.getBalance(user1);
+            var tx = await core.withdrawAuctionBalances({from: user1});
+            
+            var balanceAfter = await web3.eth.getBalance(user1);
+            
+            // Calculate gas cost for the transaction
+            var gasCost = gasPrice.mul(tx.receipt.gasUsed);
+            
+            assert.deepEqual(balanceAfter.minus(balanceBefore).plus(gasCost).toNumber(), 0);
+            
+            balanceBefore = await web3.eth.getBalance(user2);
+            tx = await core.withdrawAuctionBalances({from: user2});
+            
+            balanceAfter = await web3.eth.getBalance(user2);
+            
+            // Calculate gas cost for the transaction
+            gasCost = gasPrice.mul(tx.receipt.gasUsed);
+            
+            assert.deepEqual(balanceAfter.minus(balanceBefore).plus(gasCost).toNumber(), 0);
+        });
     });
     
     describe("Pausing", function() {
