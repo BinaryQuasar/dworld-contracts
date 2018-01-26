@@ -266,7 +266,7 @@ contract("ClockAuction", function(accounts) {
         });
         
         it("should prevent withdrawing when no proceeds are owed", async function() {
-            await utils.assertRevert(auction.withdrawAuctionBalance({from: user1}));
+            await utils.assertRevert(auction.withdrawAuctionBalance(user1, {from: user1}));
         });
         
         it("assigns proceeds from auctions", async function() {
@@ -284,14 +284,22 @@ contract("ClockAuction", function(accounts) {
             assert.equal(await auction.addressToEtherOwed(user2), 0);
         });
         
+        it("should prevent withdrawing proceeds to a beneficiary from a different address", async function() {
+            await utils.assertRevert(auction.withdrawAuctionBalance(user1, {from: user2}));
+        });
+        
         it("allows the seller to withdraw proceeds", async function() {
             var balanceBefore = await web3.eth.getBalance(user1);
-            var tx = await auction.withdrawAuctionBalance({from: user1});
+            var tx = await auction.withdrawAuctionBalance(user1, {from: user1});
             var balanceAfter = await web3.eth.getBalance(user1);
             
             var totalGasCost = gasPrice.times(tx.receipt.gasUsed);
             
             assert.equal(balanceAfter.minus(balanceBefore).plus(totalGasCost).toNumber(), actualPrice.times(1 - 0.035).toNumber());
+        });
+        
+        it("should prevent withdrawing twice", async function() {
+            await utils.assertRevert(auction.withdrawAuctionBalance(user1, {from: user1}));
         });
         
         it("sets outstanding proceeds of seller to 0 after withdrawal", async function() {

@@ -117,24 +117,31 @@ contract ClockAuction is ClockAuctionBase, Pausable {
         return _currentPrice(auction);
     }
     
-    /// @notice Withdraw ether owed.
-    function withdrawAuctionBalance() external {
-        uint256 etherOwed = addressToEtherOwed[msg.sender];
+    /// @notice Withdraw ether owed to a beneficiary.
+    /// @param beneficiary The address to withdraw the auction balance for.
+    function withdrawAuctionBalance(address beneficiary) external {
+        // The sender must either be the beneficiary or the core token contract.
+        require(
+            msg.sender == beneficiary ||
+            msg.sender == address(tokenContract)
+        );
         
-        // Ensure ether is owed to the sender
+        uint256 etherOwed = addressToEtherOwed[beneficiary];
+        
+        // Ensure ether is owed to the beneficiary.
         require(etherOwed > 0);
          
         // Set ether owed to 0   
-        addressToEtherOwed[msg.sender] = 0;
+        delete addressToEtherOwed[beneficiary];
         
         // Subtract from total outstanding balance. etherOwed is guaranteed
         // to be less than or equal to outstandingEther, so this cannot
         // underflow.
         outstandingEther -= etherOwed;
         
-        // Transfer ether owed to sender (not susceptible to re-entry attack, as
-        // the ether owed is set to 0 before the transfer takes place).
-        msg.sender.transfer(etherOwed);
+        // Transfer ether owed to the beneficiary (not susceptible to re-entry
+        // attack, as the ether owed is set to 0 before the transfer takes place).
+        beneficiary.transfer(etherOwed);
     }
     
     /// @notice Withdraw (unowed) contract balance.
