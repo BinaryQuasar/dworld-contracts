@@ -85,7 +85,7 @@ contract DWorldDeed is DWorldBase, ERC721, ERC721Metadata {
         identifierToOwner[_deedId] = _to;
         
         // When a new deed is minted, the _from address is 0x0, but we
-        // do not track token ownership of 0x0.
+        // do not track deed ownership of 0x0.
         if (_from != address(0)) {
             ownershipDeedCount[_from]--;
             
@@ -141,7 +141,7 @@ contract DWorldDeed is DWorldBase, ERC721, ERC721Metadata {
         for (uint256 i = 0; i < _deedIds.length; i++) {
             uint256 _deedId = _deedIds[i];
             
-            // Require the sender is the owner of the token.
+            // Require the sender is the owner of the deed.
             require(_owns(msg.sender, _deedId));
             
             // Perform the approval.
