@@ -1,12 +1,11 @@
 pragma solidity ^0.4.18;
 
 import "zeppelin-solidity/contracts/lifecycle/Pausable.sol";
-import "../ERC721Draft.sol";
 import "./ClockAuctionBase.sol";
 
 contract ClockAuction is ClockAuctionBase, Pausable {
-    function ClockAuction(address _tokenContractAddress, uint256 _fee) 
-        ClockAuctionBase(_tokenContractAddress, _fee)
+    function ClockAuction(address _deedContractAddress, uint256 _fee) 
+        ClockAuctionBase(_deedContractAddress, _fee)
         public
     {}
     
@@ -18,10 +17,10 @@ contract ClockAuction is ClockAuctionBase, Pausable {
         fee = _fee;
     }
     
-    /// @notice Get the auction for the given token.
-    /// @param _tokenId The identifier of the token to get the auction for.
-    /// @dev Throws if there is no auction for the given token.
-    function getAuction(uint256 _tokenId) external view returns (
+    /// @notice Get the auction for the given deed.
+    /// @param _deedId The identifier of the deed to get the auction for.
+    /// @dev Throws if there is no auction for the given deed.
+    function getAuction(uint256 _deedId) external view returns (
             address seller,
             uint256 startPrice,
             uint256 endPrice,
@@ -29,7 +28,7 @@ contract ClockAuction is ClockAuctionBase, Pausable {
             uint256 startedAt
         )
     {
-        Auction storage auction = identifierToAuction[_tokenId];
+        Auction storage auction = identifierToAuction[_deedId];
         
         // The auction must be active
         require(_activeAuction(auction));
@@ -43,52 +42,52 @@ contract ClockAuction is ClockAuctionBase, Pausable {
         );
     }
 
-    /// @notice Create an auction for a given token.
-    /// Must previously have been given approval to take ownership of the token.
-    /// @param _tokenId The identifier of the token to create an auction for.
+    /// @notice Create an auction for a given deed.
+    /// Must previously have been given approval to take ownership of the deed.
+    /// @param _deedId The identifier of the deed to create an auction for.
     /// @param _startPrice The starting price of the auction.
     /// @param _endPrice The ending price of the auction.
     /// @param _duration The duration in seconds of the dynamic pricing part of the auction.
-    function createAuction(uint256 _tokenId, uint256 _startPrice, uint256 _endPrice, uint256 _duration)
+    function createAuction(uint256 _deedId, uint256 _startPrice, uint256 _endPrice, uint256 _duration)
         public
         fitsIn128Bits(_startPrice)
         fitsIn128Bits(_endPrice)
         fitsIn64Bits(_duration)
         whenNotPaused
     {
-        // Get the owner of the token to be auctioned
-        address tokenOwner = tokenContract.ownerOf(_tokenId);
+        // Get the owner of the deed to be auctioned
+        address deedOwner = deedContract.ownerOf(_deedId);
     
-        // Caller must either be the token contract or the owner of the token
+        // Caller must either be the deed contract or the owner of the deed.
         // to prevent abuse.
         require(
-            msg.sender == address(tokenContract) ||
-            msg.sender == tokenOwner
+            msg.sender == address(deedContract) ||
+            msg.sender == deedOwner
         );
     
         // The duration of the auction must be at least 60 seconds.
         require(_duration >= 60);
     
-        // Throws if placing the token in escrow fails (the contract requires
+        // Throws if placing the deed in escrow fails (the contract requires
         // transfer approval prior to creating the auction).
-        _escrow(_tokenId);
+        _escrow(_deedId);
         
         // Auction struct
         Auction memory auction = Auction(
-            tokenOwner,
+            deedOwner,
             uint128(_startPrice),
             uint128(_endPrice),
             uint64(_duration),
             uint64(now)
         );
         
-        _createAuction(_tokenId, auction);
+        _createAuction(_deedId, auction);
     }
     
     /// @notice Cancel an auction
-    /// @param _tokenId The identifier of the token to cancel the auction for.
-    function cancelAuction(uint256 _tokenId) external whenNotPaused {
-        Auction storage auction = identifierToAuction[_tokenId];
+    /// @param _deedId The identifier of the deed to cancel the auction for.
+    function cancelAuction(uint256 _deedId) external whenNotPaused {
+        Auction storage auction = identifierToAuction[_deedId];
         
         // The auction must be active.
         require(_activeAuction(auction));
@@ -96,20 +95,20 @@ contract ClockAuction is ClockAuctionBase, Pausable {
         // The auction can only be cancelled by the seller
         require(msg.sender == auction.seller);
         
-        _cancelAuction(_tokenId, auction);
+        _cancelAuction(_deedId, auction);
     }
     
     /// @notice Bid on an auction.
-    /// @param _tokenId The identifier of the token to bid on.
-    function bid(uint256 _tokenId) external payable whenNotPaused {
+    /// @param _deedId The identifier of the deed to bid on.
+    function bid(uint256 _deedId) external payable whenNotPaused {
         // Throws if the bid does not succeed.
-        _bid(msg.sender, msg.value, _tokenId);
+        _bid(msg.sender, msg.value, _deedId);
     }
     
     /// @dev Returns the current price of an auction.
-    /// @param _tokenId The identifier of the token to get the currency price for.
-    function getCurrentPrice(uint256 _tokenId) external view returns (uint256) {
-        Auction storage auction = identifierToAuction[_tokenId];
+    /// @param _deedId The identifier of the deed to get the currency price for.
+    function getCurrentPrice(uint256 _deedId) external view returns (uint256) {
+        Auction storage auction = identifierToAuction[_deedId];
         
         // The auction must be active.
         require(_activeAuction(auction));
@@ -120,10 +119,10 @@ contract ClockAuction is ClockAuctionBase, Pausable {
     /// @notice Withdraw ether owed to a beneficiary.
     /// @param beneficiary The address to withdraw the auction balance for.
     function withdrawAuctionBalance(address beneficiary) external {
-        // The sender must either be the beneficiary or the core token contract.
+        // The sender must either be the beneficiary or the core deed contract.
         require(
             msg.sender == beneficiary ||
-            msg.sender == address(tokenContract)
+            msg.sender == address(deedContract)
         );
         
         uint256 etherOwed = addressToEtherOwed[beneficiary];
@@ -150,13 +149,13 @@ contract ClockAuction is ClockAuctionBase, Pausable {
         // outstandingEther is guaranteed to be less than freeBalance.        
         uint256 freeBalance = this.balance - outstandingEther;
         
-        address tokenContractAddress = address(tokenContract);
+        address deedContractAddress = address(deedContract);
 
         require(
             msg.sender == owner ||
-            msg.sender == tokenContractAddress
+            msg.sender == deedContractAddress
         );
         
-        tokenContractAddress.transfer(freeBalance);
+        deedContractAddress.transfer(freeBalance);
     }
 }

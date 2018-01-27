@@ -18,7 +18,7 @@ contract DWorldBase is DWorldAccessControl {
     
     mapping (uint256 => address) identifierToOwner;
     mapping (uint256 => address) identifierToApproved;
-    mapping (address => uint256) ownershipTokenCount;
+    mapping (address => uint256) ownershipDeedCount;
     
     /// @dev Event fired when a plot's data are changed. The plot
     /// data are not stored in the contract directly, instead the
@@ -26,7 +26,7 @@ contract DWorldBase is DWorldAccessControl {
     /// reductions in gas requirements (~75k for minting with data
     /// instead of ~180k). However, it also means plot data are
     /// not available from *within* other contracts.
-    event SetData(uint256 indexed tokenId, string name, string description, string imageUrl, string infoUrl);
+    event SetData(uint256 indexed deedId, string name, string description, string imageUrl, string infoUrl);
     
     /// @notice Get all minted plots.
     function getAllPlots() external view returns(uint32[]) {

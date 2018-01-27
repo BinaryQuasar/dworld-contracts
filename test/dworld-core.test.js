@@ -33,10 +33,10 @@ contract("DWorldCore", function(accounts) {
         unclaimedPlotPrice = await core.unclaimedPlotPrice();
     }
     
-    async function mintTokens() {
-        debug("Buying some tokens");
+    async function mintDeeds() {
+        debug("Buying some deeds.");
         
-        // User1 mints a few tokens by sending Ether
+        // User1 mints a few deeds by sending Ether
         await core.claimPlotMultiple([plotA, plotB, plotC, plotD], {from: user1, value: 4 * unclaimedPlotPrice});
     }
     
@@ -62,7 +62,7 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("should have no supply", async function() {
-            assert.equal(await core.totalSupply(), 0);
+            assert.equal(await core.countOfDeeds(), 0);
         });
         
         it("should transform between coordinate and identifier space", async function() {
@@ -88,22 +88,23 @@ contract("DWorldCore", function(accounts) {
         
         it("correctly identifies interface signatures", async function() {
             assert.equal(await core.supportsInterface("0x01ffc9a7"), true); // ERC-165
-            assert.equal(await core.supportsInterface("0x19595b11"), true); // ERC-721
+            assert.equal(await core.supportsInterface("0xda671b9b"), true); // ERC-721
+            assert.equal(await core.supportsInterface("0x2a786f11"), true); // ERC-721 Metadata
             assert.equal(await core.supportsInterface("0xbaaaaaad"), false); // Something unsupported
         });
     });
     
-    describe("Non-fungible plot tokens (EIP-721)", function() {
+    describe("Deed standard (EIP-721)", function() {
         beforeEach(deployContract);
-        beforeEach(mintTokens);
+        beforeEach(mintDeeds);
         
-        it("should only give tokens to the buyer", async function() {
-            assert.equal(await core.balanceOf(user1), 4);
-            assert.equal(await core.balanceOf(user2), 0);
+        it("should only give deeds to the buyer", async function() {
+            assert.equal(await core.countOfDeedsByOwner(user1), 4);
+            assert.equal(await core.countOfDeedsByOwner(user2), 0);
         });
         
         it("should increase supply when minting", async function() {
-            assert.equal(await core.totalSupply(), 4);
+            assert.equal(await core.countOfDeeds(), 4);
         });
         
         it("only mints if enough ether is sent", async function() {
@@ -125,10 +126,10 @@ contract("DWorldCore", function(accounts) {
         
         it("mints extreme (but valid) plots", async function() {
             await core.claimPlotMultiple([0, 4294967295], {from: user1, value: 2 * unclaimedPlotPrice});
-            assert.equal(await core.totalSupply(), 6);
+            assert.equal(await core.countOfDeeds(), 6);
         });
         
-        it("should correctly assign identifiers to minted tokens", async function() {
+        it("should correctly assign identifiers to minted dees", async function() {
             await core.claimPlotMultiple([0, 1], {from: user1, value: 2 * unclaimedPlotPrice});
             await core.claimPlot(42, {from: user1, value: unclaimedPlotPrice});
             
@@ -141,46 +142,46 @@ contract("DWorldCore", function(accounts) {
             assert.equal(await core.plots(6), 42);
         });
         
-        it("should not allow transferring tokens to 0x0", async function() {
+        it("should not allow transferring deeds to 0x0", async function() {
             await utils.assertRevert(core.transfer(0x0, plotA, {from: user1}));
         });
         
-        it("should prevent non-token holder from transferring tokens", async function() {
+        it("should prevent non-deed holder from transferring deeds", async function() {
             await utils.assertRevert(core.transfer(user2, plotA, {from: user2}));
         });
         
-        it("allows token holder to transfer tokens", async function() {
+        it("allows deed holder to transfer deeds", async function() {
             await core.transfer(user2, plotA, {from: user1});
             assert.equal(await core.ownerOf(plotA), user2);
-            assert.equal(await core.balanceOf(user1), 3);
-            assert.equal(await core.balanceOf(user2), 1);
+            assert.equal(await core.countOfDeedsByOwner(user1), 3);
+            assert.equal(await core.countOfDeedsByOwner(user2), 1);
         });
         
-        it("can set token transfer approval", async function() {
+        it("can set deed transfer approval", async function() {
             await core.approve(user2, plotA, {from: user1});
             assert.equal(await core.ownerOf(plotA), user1);
         });
         
-        it("should prevent non-approved address from taking token ownership", async function() {
+        it("should prevent non-approved address from taking deed ownership", async function() {
             await utils.assertRevert(core.takeOwnership(plotB, {from: user3}));            
             assert.equal(await core.ownerOf(plotB), user1);
         });
         
-        it("allows approved address to take token ownership", async function() {
+        it("allows approved address to take deed ownership", async function() {
             await core.approve(user2, plotA, {from: user1});
             await core.takeOwnership(plotA, {from: user2});
             assert.equal(await core.ownerOf(plotA), user2);
-            assert.equal(await core.balanceOf(user1), 3);
-            assert.equal(await core.balanceOf(user2), 1);
+            assert.equal(await core.countOfDeedsByOwner(user1), 3);
+            assert.equal(await core.countOfDeedsByOwner(user2), 1);
         });
         
-        it("should prevent taking ownership by old pending approval after token has been transferred", async function() {
+        it("should prevent taking ownership by old pending approval after deed has been transferred", async function() {
             await core.approve(user2, plotA, {from: user1});
             await core.transfer(user3, plotA, {from: user1});
             await utils.assertRevert(core.takeOwnership(plotA, {from: user2}));
-            assert.equal(await core.balanceOf(user1), 3);
-            assert.equal(await core.balanceOf(user2), 0);
-            assert.equal(await core.balanceOf(user3), 1);
+            assert.equal(await core.countOfDeedsByOwner(user1), 3);
+            assert.equal(await core.countOfDeedsByOwner(user2), 0);
+            assert.equal(await core.countOfDeedsByOwner(user3), 1);
         });
         
         it("should prevent minting the same plot twice", async function() {
@@ -189,19 +190,19 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("creates correct metadata urls", async function() {
-            assert.equal(await core.tokenMetadata(0), "https://dworld.io/plot/00000/00000");
-            assert.equal(await core.tokenMetadata(1), "https://dworld.io/plot/00001/00000");
-            assert.equal(await core.tokenMetadata(42), "https://dworld.io/plot/00042/00000");
-            assert.equal(await core.tokenMetadata(23074867), "https://dworld.io/plot/06195/00352");
-            assert.equal(await core.tokenMetadata(4294967295), "https://dworld.io/plot/65535/65535");
-            await utils.assertRevert(core.tokenMetadata(4294967296));
-            await utils.assertRevert(core.tokenMetadata(-1));
+            assert.equal(await core.deedUri(0), "https://dworld.io/plot/00000/00000");
+            assert.equal(await core.deedUri(1), "https://dworld.io/plot/00001/00000");
+            assert.equal(await core.deedUri(42), "https://dworld.io/plot/00042/00000");
+            assert.equal(await core.deedUri(23074867), "https://dworld.io/plot/06195/00352");
+            assert.equal(await core.deedUri(4294967295), "https://dworld.io/plot/65535/65535");
+            await utils.assertRevert(core.deedUri(4294967296));
+            await utils.assertRevert(core.deedUri(-1));
         });
     });
     
     describe("Renting", function() {
         beforeEach(deployContract);
-        beforeEach(mintTokens);
+        beforeEach(mintDeeds);
         
         it("should have no renter by default", async function() {
             var renterAndPeriodEnd = await core.renterOf(plotA);
@@ -209,11 +210,11 @@ contract("DWorldCore", function(accounts) {
             assert.equal(renterAndPeriodEnd[1], 0);
         });
         
-        it("should prevent non-token holder from renting a token out", async function() {
+        it("should prevent non-deed holder from renting a deed out", async function() {
             await utils.assertRevert(core.rentOut(user3, 60, plotA, {from: user2}));
         });
         
-        it("allows token holder to rent out a plot", async function() {
+        it("allows deed holder to rent out a plot", async function() {
             await core.rentOut(user2, 60, plotA, {from: user1});
             
             // Get tx timestamp
@@ -246,7 +247,7 @@ contract("DWorldCore", function(accounts) {
             assert.equal(renterAndPeriodEnd[1], 0);
         });
         
-        it("should prevent renter from transferring the token", async function() {
+        it("should prevent renter from transferring the deed", async function() {
             await core.rentOut(user2, 60, plotA, {from: user1});
             await utils.assertRevert(core.transfer(user3, plotA, {from: user2}));
         });
@@ -270,7 +271,7 @@ contract("DWorldCore", function(accounts) {
     
     describe("Plot data", function() {
         beforeEach(deployContract);
-        beforeEach(mintTokens);
+        beforeEach(mintDeeds);
         
         it("can not be updated by non-owner", async function() {
             await utils.assertRevert(core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user2}));
@@ -285,7 +286,7 @@ contract("DWorldCore", function(accounts) {
             assert.equal(logs.length, 1);
             
             var data = logs[0].args;
-            assert.equal(data.tokenId, plotA);
+            assert.equal(data.deedId, plotA);
             assert.equal(data.name, "TestName");
             assert.equal(data.description, "TestDescription");
             assert.equal(data.imageUrl, 'TestImageUrl');
@@ -308,7 +309,7 @@ contract("DWorldCore", function(accounts) {
             assert.equal(logs.length, 1);
             
             var data = logs[0].args;
-            assert.equal(data.tokenId, plotA);
+            assert.equal(data.deedId, plotA);
             assert.equal(data.name, "TestName");
             assert.equal(data.description, "TestDescription");
             assert.equal(data.imageUrl, 'TestImageUrl');
@@ -336,7 +337,7 @@ contract("DWorldCore", function(accounts) {
             assert.equal(logs.length, 1);
             
             var data = logs[0].args;
-            assert.equal(data.tokenId, plotA);
+            assert.equal(data.deedId, plotA);
             assert.equal(data.name, "TestName");
             assert.equal(data.description, "TestDescription");
             assert.equal(data.imageUrl, 'TestImageUrl');
@@ -352,7 +353,7 @@ contract("DWorldCore", function(accounts) {
             assert.equal(logs.length, 1);
             
             var data = logs[0].args;
-            assert.equal(data.tokenId, 0);
+            assert.equal(data.deedId, 0);
             assert.equal(data.name, "TestName1");
             assert.equal(data.description, "TestDescription1");
             assert.equal(data.imageUrl, 'ImageUrl1');
@@ -364,14 +365,14 @@ contract("DWorldCore", function(accounts) {
             assert.equal(logs.length, 2);
             
             data = logs[0].args;
-            assert.equal(data.tokenId, 1);
+            assert.equal(data.deedId, 1);
             assert.equal(data.name, "TestName2");
             assert.equal(data.description, "TestDescription2");
             assert.equal(data.imageUrl, 'ImageUrl2');
             assert.equal(data.infoUrl, 'InfoUrl2');
             
             data = logs[1].args;
-            assert.equal(data.tokenId, 2);
+            assert.equal(data.deedId, 2);
             assert.equal(data.name, "TestName2");
             assert.equal(data.description, "TestDescription2");
             assert.equal(data.imageUrl, 'ImageUrl2');
@@ -502,7 +503,7 @@ contract("DWorldCore", function(accounts) {
     
     describe("Allowance", function() {
         beforeEach(deployContract);
-        beforeEach(mintTokens);
+        beforeEach(mintDeeds);
         beforeEach(async function setCFO() {
             await core.setCFO(cfo, {from: owner});
         });
@@ -598,7 +599,7 @@ contract("DWorldCore", function(accounts) {
         before(async function setCFO() {
             await core.setCFO(cfo, {from: owner});
         });
-        before(mintTokens);
+        before(mintDeeds);
         before(deployAuctionContracts);
         
         const oneEth = web3.toWei(new BigNumber("1"), 'ether');
@@ -608,17 +609,17 @@ contract("DWorldCore", function(accounts) {
         var totalPrice = new BigNumber("0");
         var totalPaid = new BigNumber("0");
         
-        it("should prevent non-token holder from putting up auctions", async function() {
+        it("should prevent non-deed holder from putting up auctions", async function() {
             await utils.assertRevert(core.createSaleAuction(plotA, oneEth, oneEth, utils.duration.days(3), {from: user2}));
             await utils.assertRevert(core.createRentAuction(plotB, oneEth, oneEth, utils.duration.days(3), utils.duration.weeks(4), {from: user2}));
         });
         
-        it("should prevent rented-out token from being put up for a rent auction", async function() {
+        it("should prevent rented-out deed from being put up for a rent auction", async function() {
             await core.rentOut(user2, 60, plotB, {from: user1});
             await utils.assertRevert(core.createRentAuction(plotB, oneEth, oneEth, utils.duration.days(3), utils.duration.weeks(4), {from: user1}));
         });
         
-        it("allows token owner to put up token for auction", async function() {
+        it("allows deed owner to put up deed for auction", async function() {
             // Wait for rent-out to expire
             await utils.increaseTime(utils.duration.seconds(100));
             
@@ -628,7 +629,7 @@ contract("DWorldCore", function(accounts) {
             totalPrice = totalPrice.plus(oneEth.times(2));
         });
         
-        it("places tokens in auction escrow", async function() {
+        it("places deeds in auction escrow", async function() {
             assert.equal(await core.ownerOf(plotA), saleAuction.address);
             assert.equal(await core.ownerOf(plotB), rentAuction.address);
         });
@@ -643,10 +644,10 @@ contract("DWorldCore", function(accounts) {
             await utils.assertRevert(rentAuction.bid(plotA, {from: user2, value: oneEth}));
         });
         
-        it("transfers tokens to winners of sale auctions", async function() {            
+        it("transfers deeds to winners of sale auctions", async function() {            
             await saleAuction.bid(plotA, {from: user2, value: oneEth});
             
-            // Token is transferred to new owner
+            // Deed is transferred to new owner
             assert.equal(await core.ownerOf(plotA), user2);
             
             totalPaid = totalPaid.plus(oneEth);
@@ -662,7 +663,7 @@ contract("DWorldCore", function(accounts) {
             assert.equal(renter, user3);
             assert.equal(rentPeriodEnd.toNumber(), timestamp + utils.duration.weeks(4));
             
-            // Token is transferred back to original owner
+            // Deed is transferred back to original owner
             assert.equal(await core.ownerOf(plotB), user1);
             
             totalPaid = totalPaid.plus(oneEth.times(5));
@@ -723,7 +724,7 @@ contract("DWorldCore", function(accounts) {
     
     describe("Pausing", function() {
         before(deployContract);
-        before(mintTokens);
+        before(mintDeeds);
         before(async function approveTransfer() {
             await core.approve(user2, plotB, {from: user1});
         });

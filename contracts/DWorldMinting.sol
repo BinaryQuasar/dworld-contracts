@@ -2,7 +2,7 @@ pragma solidity ^0.4.18;
 
 import "./DWorldRenting.sol";
 
-/// @dev Holds functionality for minting new plot tokens.
+/// @dev Holds functionality for minting new plot deeds.
 contract DWorldMinting is DWorldRenting {
     uint256 public unclaimedPlotPrice = 0.0025 ether;
     mapping (address => uint256) freeClaimAllowance;
@@ -27,38 +27,38 @@ contract DWorldMinting is DWorldRenting {
     }
        
     /// @notice Buy an unclaimed plot.
-    /// @param _tokenId The unclaimed plot to buy.
-    function claimPlot(uint256 _tokenId) external payable whenNotPaused {
-        claimPlotWithData(_tokenId, "", "", "", "");
+    /// @param _deedId The unclaimed plot to buy.
+    function claimPlot(uint256 _deedId) external payable whenNotPaused {
+        claimPlotWithData(_deedId, "", "", "", "");
     }
        
     /// @notice Buy an unclaimed plot.
-    /// @param _tokenId The unclaimed plot to buy.
+    /// @param _deedId The unclaimed plot to buy.
     /// @param name The name to give the plot.
     /// @param description The description to add to the plot.
     /// @param imageUrl The image url for the plot.
     /// @param infoUrl The info url for the plot.
-    function claimPlotWithData(uint256 _tokenId, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
-        uint256[] memory _tokenIds = new uint256[](1);
-        _tokenIds[0] = _tokenId;
+    function claimPlotWithData(uint256 _deedId, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
+        uint256[] memory _deedIds = new uint256[](1);
+        _deedIds[0] = _deedId;
         
-        claimPlotMultipleWithData(_tokenIds, name, description, imageUrl, infoUrl);
+        claimPlotMultipleWithData(_deedIds, name, description, imageUrl, infoUrl);
     }
     
     /// @notice Buy unclaimed plots.
-    /// @param _tokenIds The unclaimed plots to buy.
-    function claimPlotMultiple(uint256[] _tokenIds) external payable whenNotPaused {
-        claimPlotMultipleWithData(_tokenIds, "", "", "", "");
+    /// @param _deedIds The unclaimed plots to buy.
+    function claimPlotMultiple(uint256[] _deedIds) external payable whenNotPaused {
+        claimPlotMultipleWithData(_deedIds, "", "", "", "");
     }
     
     /// @notice Buy unclaimed plots.
-    /// @param _tokenIds The unclaimed plots to buy.
+    /// @param _deedIds The unclaimed plots to buy.
     /// @param name The name to give the plots.
     /// @param description The description to add to the plots.
     /// @param imageUrl The image url for the plots.
     /// @param infoUrl The info url for the plots.
-    function claimPlotMultipleWithData(uint256[] _tokenIds, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
-        uint256 buyAmount = _tokenIds.length;
+    function claimPlotMultipleWithData(uint256[] _deedIds, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
+        uint256 buyAmount = _deedIds.length;
         uint256 etherRequired;
         if (freeClaimAllowance[msg.sender] > 0) {
             // The sender has a free claim allowance.
@@ -90,25 +90,25 @@ contract DWorldMinting is DWorldRenting {
         // Allocate additional memory for the plots array
         // (this is more efficient than .push-ing each individual
         // plot, as that requires multiple dynamic allocations).
-        plots.length = plots.length.add(_tokenIds.length);
+        plots.length = plots.length.add(_deedIds.length);
         
-        for (uint256 i = 0; i < _tokenIds.length; i++) { 
-            uint256 _tokenId = _tokenIds[i];
-            require(validIdentifier(_tokenId));
+        for (uint256 i = 0; i < _deedIds.length; i++) { 
+            uint256 _deedId = _deedIds[i];
+            require(validIdentifier(_deedId));
             
-            // The plot must be unowned (a plot token cannot be transferred to
+            // The plot must be unowned (a plot deed cannot be transferred to
             // 0x0, so once a plot is claimed it will always be owned by a
             // non-zero address).
-            require(identifierToOwner[_tokenId] == address(0));
+            require(identifierToOwner[_deedId] == address(0));
             
             // Create the plot
-            plots[offset + i] = uint32(_tokenId);
+            plots[offset + i] = uint32(_deedId);
             
             // Transfer the new plot to the sender.
-            _transfer(address(0), msg.sender, _tokenId);
+            _transfer(address(0), msg.sender, _deedId);
             
             // Set the plot data.
-            _setPlotData(_tokenId, name, description, imageUrl, infoUrl);
+            _setPlotData(_deedId, name, description, imageUrl, infoUrl);
         }
         
         // Calculate the excess ether sent

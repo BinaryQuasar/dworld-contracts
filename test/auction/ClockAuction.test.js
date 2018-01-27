@@ -29,8 +29,9 @@ contract("ClockAuction", function(accounts) {
     let erc721;
     let auction;
     let gasPrice;
-    let tokenA;
-    let tokenB;
+    let deedA;
+    let deedB;
+    let deedC;
     
     async function deployContract() {
         debug("Deploying clock auction contract.");
@@ -40,13 +41,13 @@ contract("ClockAuction", function(accounts) {
         gasPrice = new BigNumber(auction.constructor.class_defaults.gasPrice);
     }
     
-    async function mintTokens() {
-        await erc721.createToken({from: user1});
-        await erc721.createToken({from: user1});
-        await erc721.createToken({from: user2});
-        tokenA = 1;
-        tokenB = 2;
-        tokenC = 3;
+    async function mintDeeds() {
+        await erc721.createDeed({from: user1});
+        await erc721.createDeed({from: user1});
+        await erc721.createDeed({from: user2});
+        deedA = 1;
+        deedB = 2;
+        deedC = 3;
     }
     
     describe("Initial State", function() {
@@ -57,53 +58,53 @@ contract("ClockAuction", function(accounts) {
         });
         
         it("should have the correct ERC721 address", async function() {
-            assert.equal(await auction.tokenContract(), erc721.address);
+            assert.equal(await auction.deedContract(), erc721.address);
         });
     });
     
     describe("Auction creation and cancellation", function() {
         beforeEach(deployContract);
-        beforeEach(mintTokens);
+        beforeEach(mintDeeds);
         
-        it("should prevent creating auctions with tokens not approved for transfer to the auction contract", async function() {
-            await utils.assertRevert(auction.createAuction(tokenA, oneEth, halveEth, utils.duration.days(3), {from: user1}));
+        it("should prevent creating auctions with deeds not approved for transfer to the auction contract", async function() {
+            await utils.assertRevert(auction.createAuction(deedA, oneEth, halveEth, utils.duration.days(3), {from: user1}));
         });
         
         it("should prevent creating auctions with too large auction values", async function() {
-            await erc721.approve(auction.address, tokenA, {from: user1});
+            await erc721.approve(auction.address, deedA, {from: user1});
             
             // Start price: max 128 bits
-            await utils.assertRevert(auction.createAuction(tokenA, new BigNumber(2).pow(128), oneEth, utils.duration.days(3))); // 2^128
-            await utils.assertRevert(auction.createAuction(tokenA, new BigNumber(2).pow(150), oneEth, utils.duration.days(3))); // 2^128
-            await utils.assertRevert(auction.createAuction(tokenA, new BigNumber(2).pow(256).minus(1), oneEth, utils.duration.days(3))); // 2^256-1
+            await utils.assertRevert(auction.createAuction(deedA, new BigNumber(2).pow(128), oneEth, utils.duration.days(3))); // 2^128
+            await utils.assertRevert(auction.createAuction(deedA, new BigNumber(2).pow(150), oneEth, utils.duration.days(3))); // 2^128
+            await utils.assertRevert(auction.createAuction(deedA, new BigNumber(2).pow(256).minus(1), oneEth, utils.duration.days(3))); // 2^256-1
             
             // End price: max 128 bits
-            await utils.assertRevert(auction.createAuction(tokenA, oneEth, new BigNumber(2).pow(128), utils.duration.days(3))); // 2^128
-            await utils.assertRevert(auction.createAuction(tokenA, oneEth, new BigNumber(2).pow(150), utils.duration.days(3))); // 2^128
-            await utils.assertRevert(auction.createAuction(tokenA, oneEth, new BigNumber(2).pow(256).minus(1), utils.duration.days(3))); // 2^256-1
+            await utils.assertRevert(auction.createAuction(deedA, oneEth, new BigNumber(2).pow(128), utils.duration.days(3))); // 2^128
+            await utils.assertRevert(auction.createAuction(deedA, oneEth, new BigNumber(2).pow(150), utils.duration.days(3))); // 2^128
+            await utils.assertRevert(auction.createAuction(deedA, oneEth, new BigNumber(2).pow(256).minus(1), utils.duration.days(3))); // 2^256-1
             
             // Duration: max 64 bits
-            await utils.assertRevert(auction.createAuction(tokenA, oneEth, halveEth, new BigNumber(2).pow(64)));
-            await utils.assertRevert(auction.createAuction(tokenA, oneEth, halveEth, new BigNumber(2).pow(80)));
-            await utils.assertRevert(auction.createAuction(tokenA, oneEth, halveEth, new BigNumber(2).pow(256).minus(1)));
+            await utils.assertRevert(auction.createAuction(deedA, oneEth, halveEth, new BigNumber(2).pow(64)));
+            await utils.assertRevert(auction.createAuction(deedA, oneEth, halveEth, new BigNumber(2).pow(80)));
+            await utils.assertRevert(auction.createAuction(deedA, oneEth, halveEth, new BigNumber(2).pow(256).minus(1)));
         });
         
-        it("should prevent creating auctions for non-token holders", async function() {
-            await erc721.approve(auction.address, tokenA, {from: user1});
+        it("should prevent creating auctions for non-deed holders", async function() {
+            await erc721.approve(auction.address, deedA, {from: user1});
             
-            await utils.assertRevert(auction.createAuction(tokenA, oneEth, halveEth, utils.duration.days(3), {from: user2}));
+            await utils.assertRevert(auction.createAuction(deedA, oneEth, halveEth, utils.duration.days(3), {from: user2}));
         });
         
-        it("should prevent creating auctions for tokens that do not exist", async function() {
+        it("should prevent creating auctions for deeds that do not exist", async function() {
             await utils.assertRevert(auction.createAuction(42, oneEth, halveEth, utils.duration.days(3), {from: user2}));
         });
         
-        it("successfully creates an auction for the owner of an approved token", async function() {
-            await erc721.approve(auction.address, tokenA, {from: user1});
-            await auction.createAuction(tokenA, oneEth, halveEth, utils.duration.days(3), {from: user1});
+        it("successfully creates an auction for the owner of an approved deed", async function() {
+            await erc721.approve(auction.address, deedA, {from: user1});
+            await auction.createAuction(deedA, oneEth, halveEth, utils.duration.days(3), {from: user1});
             var timestamp = await utils.latestTime();
             
-            var [seller, startPrice, endPrice, duration, startedAt] = await auction.getAuction(tokenA);
+            var [seller, startPrice, endPrice, duration, startedAt] = await auction.getAuction(deedA);
             
             assert.equal(seller, user1);
             assert.equal(startPrice.toNumber(), oneEth.toNumber());
@@ -112,146 +113,146 @@ contract("ClockAuction", function(accounts) {
             assert.equal(startedAt.toNumber(), timestamp);
         });
         
-        it("places the token in escrow", async function() {
-            await erc721.approve(auction.address, tokenA, {from: user1});
-            await auction.createAuction(tokenA, oneEth, halveEth, utils.duration.days(3), {from: user1});
+        it("places the deed in escrow", async function() {
+            await erc721.approve(auction.address, deedA, {from: user1});
+            await auction.createAuction(deedA, oneEth, halveEth, utils.duration.days(3), {from: user1});
             
-            assert.equal(await erc721.ownerOf(tokenA), auction.address);
+            assert.equal(await erc721.ownerOf(deedA), auction.address);
         });
         
-        it("should prevent creating an auction if the token is already on auction", async function() {
-            await erc721.approve(auction.address, tokenA, {from: user1});
-            await auction.createAuction(tokenA, oneEth, halveEth, utils.duration.days(3), {from: user1});
+        it("should prevent creating an auction if the deed is already on auction", async function() {
+            await erc721.approve(auction.address, deedA, {from: user1});
+            await auction.createAuction(deedA, oneEth, halveEth, utils.duration.days(3), {from: user1});
             
-            await utils.assertRevert(auction.createAuction(tokenA, oneEth, halveEth, utils.duration.days(3), {from: user1}));
+            await utils.assertRevert(auction.createAuction(deedA, oneEth, halveEth, utils.duration.days(3), {from: user1}));
         });
         
-        it("should prevent auction cancellation for tokens that do not exist", async function() {
+        it("should prevent auction cancellation for deeds that do not exist", async function() {
             await utils.assertRevert(auction.cancelAuction(42, {from: user1}));
         });
         
-        it("should prevent auction cancellation of tokens not in auction", async function() {
-            await utils.assertRevert(auction.cancelAuction(tokenA, {from: user1}));
+        it("should prevent auction cancellation of deeds not in auction", async function() {
+            await utils.assertRevert(auction.cancelAuction(deedA, {from: user1}));
         });
         
-        it("should prevent auction cancellation by non-token owner", async function() {
-            await erc721.approve(auction.address, tokenA, {from: user1});
-            await auction.createAuction(tokenA, oneEth, halveEth, utils.duration.days(3), {from: user1});
+        it("should prevent auction cancellation by non-deed owner", async function() {
+            await erc721.approve(auction.address, deedA, {from: user1});
+            await auction.createAuction(deedA, oneEth, halveEth, utils.duration.days(3), {from: user1});
             
-            await utils.assertRevert(auction.cancelAuction(tokenA, {from: user2}));
+            await utils.assertRevert(auction.cancelAuction(deedA, {from: user2}));
         });
         
-        it("successfully cancels auction and returns token to owner", async function() {
-            await erc721.approve(auction.address, tokenA, {from: user1});
-            await auction.createAuction(tokenA, oneEth, halveEth, utils.duration.days(3), {from: user1});
-            await auction.cancelAuction(tokenA, {from: user1});
+        it("successfully cancels auction and returns deed to owner", async function() {
+            await erc721.approve(auction.address, deedA, {from: user1});
+            await auction.createAuction(deedA, oneEth, halveEth, utils.duration.days(3), {from: user1});
+            await auction.cancelAuction(deedA, {from: user1});
             
-            await utils.assertRevert(auction.getAuction(tokenA));
-            assert.equal(await erc721.ownerOf(tokenA), user1);
+            await utils.assertRevert(auction.getAuction(deedA));
+            assert.equal(await erc721.ownerOf(deedA), user1);
         });
     });
     
     describe("Bidding", function() {
         beforeEach(deployContract);
-        beforeEach(mintTokens);
+        beforeEach(mintDeeds);
         beforeEach(async function approveTransfer() {
-            await erc721.approve(auction.address, tokenA, {from: user1});
+            await erc721.approve(auction.address, deedA, {from: user1});
         });
         
         it("successfully handles stable prices", async function() {
-            await auction.createAuction(tokenA, halveEth, halveEth, utils.duration.days(3), {from: user1});
+            await auction.createAuction(deedA, halveEth, halveEth, utils.duration.days(3), {from: user1});
             
             // Initially equal to start price
-            assert.equal((await auction.getCurrentPrice(tokenA)).toNumber(), halveEth.toNumber());
+            assert.equal((await auction.getCurrentPrice(deedA)).toNumber(), halveEth.toNumber());
             
             await utils.increaseTime(utils.duration.days(1));
             
             // After some time still equal to start price
-            assert.equal((await auction.getCurrentPrice(tokenA)).toNumber(), halveEth.toNumber());
+            assert.equal((await auction.getCurrentPrice(deedA)).toNumber(), halveEth.toNumber());
             
             await utils.increaseTime(utils.duration.days(2) + utils.duration.minutes(1));
             
             // After end of dynamic pricing duration still equal to end price
-            assert.equal((await auction.getCurrentPrice(tokenA)).toNumber(), halveEth.toNumber());
+            assert.equal((await auction.getCurrentPrice(deedA)).toNumber(), halveEth.toNumber());
         });
         
         it("successfully handles decreasing prices", async function() {
-            await auction.createAuction(tokenA, oneEth, halveEth, utils.duration.days(3), {from: user1});
+            await auction.createAuction(deedA, oneEth, halveEth, utils.duration.days(3), {from: user1});
             
             var startTimestamp = await utils.latestTime();
             
             // Initially equal to start price
-            assert.equal((await auction.getCurrentPrice(tokenA)).toNumber(), oneEth.toNumber());
+            assert.equal((await auction.getCurrentPrice(deedA)).toNumber(), oneEth.toNumber());
             
             await utils.increaseTime(utils.duration.days(1));
             
             // After some time price has decreased
             var timestamp = await utils.latestTime();
             var curPrice = currentPrice(oneEth, halveEth, utils.duration.days(3), timestamp - startTimestamp);
-            assert.equal((await auction.getCurrentPrice(tokenA)).toNumber(), curPrice.toNumber());
+            assert.equal((await auction.getCurrentPrice(deedA)).toNumber(), curPrice.toNumber());
             
             await utils.increaseTime(utils.duration.days(2) + utils.duration.minutes(1));
             
             // After end of dynamic pricing duration equal to end price
-            assert.equal((await auction.getCurrentPrice(tokenA)).toNumber(), halveEth.toNumber());
+            assert.equal((await auction.getCurrentPrice(deedA)).toNumber(), halveEth.toNumber());
         });
         
         it("successfully handles increasing prices", async function() {
-            await auction.createAuction(tokenA, halveEth, oneEth, utils.duration.days(3), {from: user1});
+            await auction.createAuction(deedA, halveEth, oneEth, utils.duration.days(3), {from: user1});
             
             var startTimestamp = await utils.latestTime();
             
             // Initially equal to start price
-            assert.equal((await auction.getCurrentPrice(tokenA)).toNumber(), halveEth.toNumber());
+            assert.equal((await auction.getCurrentPrice(deedA)).toNumber(), halveEth.toNumber());
             
             await utils.increaseTime(utils.duration.days(1));
             
             // After some time price has increased
             var timestamp = await utils.latestTime();
             var curPrice = currentPrice(halveEth, oneEth, utils.duration.days(3), timestamp - startTimestamp);
-            assert.equal((await auction.getCurrentPrice(tokenA)).toNumber(), curPrice.toNumber());
+            assert.equal((await auction.getCurrentPrice(deedA)).toNumber(), curPrice.toNumber());
             
             await utils.increaseTime(utils.duration.days(2) + utils.duration.minutes(1));
             
             // After end of dynamic pricing duration equal to end price
-            assert.equal((await auction.getCurrentPrice(tokenA)).toNumber(), oneEth.toNumber());
+            assert.equal((await auction.getCurrentPrice(deedA)).toNumber(), oneEth.toNumber());
         });
         
         it("should prevent bidding after auction has been cancelled", async function() {
-            await auction.createAuction(tokenA, oneEth, halveEth, utils.duration.days(3), {from: user1});
-            await auction.cancelAuction(tokenA, {from: user1});
+            await auction.createAuction(deedA, oneEth, halveEth, utils.duration.days(3), {from: user1});
+            await auction.cancelAuction(deedA, {from: user1});
             
-            await utils.assertRevert(auction.bid(tokenA, {from: user2, value: oneEth}));
+            await utils.assertRevert(auction.bid(deedA, {from: user2, value: oneEth}));
         });
         
         it("should fail bidding with insufficient ether", async function() {
-            await auction.createAuction(tokenA, halveEth, oneEth, utils.duration.days(3), {from: user1});
+            await auction.createAuction(deedA, halveEth, oneEth, utils.duration.days(3), {from: user1});
             
-            await utils.assertRevert(auction.bid(tokenA, {from: user2, value: halveEth.div(2)}));
+            await utils.assertRevert(auction.bid(deedA, {from: user2, value: halveEth.div(2)}));
         });
         
         it("should prevent bidding after auction has been concluded", async function() {
-            await auction.createAuction(tokenA, halveEth, oneEth, utils.duration.days(3), {from: user1});
+            await auction.createAuction(deedA, halveEth, oneEth, utils.duration.days(3), {from: user1});
             
-            await auction.bid(tokenA, {from: user3, value: oneEth});
+            await auction.bid(deedA, {from: user3, value: oneEth});
             
-            await utils.assertRevert(auction.bid(tokenA, {from: user2, value: oneEth}));
+            await utils.assertRevert(auction.bid(deedA, {from: user2, value: oneEth}));
         });
         
         it("successfully transfers winnings to buyer after a valid bid", async function() {
-            await auction.createAuction(tokenA, halveEth, oneEth, utils.duration.days(3), {from: user1});
+            await auction.createAuction(deedA, halveEth, oneEth, utils.duration.days(3), {from: user1});
             
-            await auction.bid(tokenA, {from: user3, value: oneEth});
-            assert.equal(await erc721.ownerOf(tokenA), user3);
+            await auction.bid(deedA, {from: user3, value: oneEth});
+            assert.equal(await erc721.ownerOf(deedA), user3);
         });
     });
     
     describe("Funds", async function() {        
         before(deployContract);
-        before(mintTokens);
+        before(mintDeeds);
         before(async function createAuction() {
-            await erc721.approve(auction.address, tokenA, {from: user1});
-            await auction.createAuction(tokenA, oneEth, halveEth, utils.duration.days(3), {from: user1});
+            await erc721.approve(auction.address, deedA, {from: user1});
+            await auction.createAuction(deedA, oneEth, halveEth, utils.duration.days(3), {from: user1});
         });
         
         let actualPrice;
@@ -270,13 +271,13 @@ contract("ClockAuction", function(accounts) {
         });
         
         it("assigns proceeds from auctions", async function() {
-            var [seller, startPrice, endPrice, duration, startedAt] = await auction.getAuction(tokenA);
+            var [seller, startPrice, endPrice, duration, startedAt] = await auction.getAuction(deedA);
             
             // Bid.
-            await auction.bid(tokenA, {from: user2, value: oneEth});
+            await auction.bid(deedA, {from: user2, value: oneEth});
             var endTimestamp = await utils.latestTime();
             
-            // Calculate the actual price of the token based on the transaction's block timestamp.
+            // Calculate the actual price of the deed based on the transaction's block timestamp.
             actualPrice = currentPrice(oneEth, halveEth, utils.duration.days(3), endTimestamp - startedAt);
             
             assert.equal((await auction.addressToEtherOwed(user1)).toNumber(), actualPrice.times(1 - 0.035));
@@ -311,21 +312,21 @@ contract("ClockAuction", function(accounts) {
             assert.isAtLeast(await web3.eth.getBalance(auction.address), actualPrice.times(0.035));
         });
         
-        it("should prevent non-owners from withdrawing free balance to the token contract", async function() {
+        it("should prevent non-owners from withdrawing free balance to the deed contract", async function() {
             await utils.assertRevert(auction.withdrawFreeBalance({from: user1}));
         });
         
-        it("allows the owner to withdraw the free balance to the token contract", async function() {
+        it("allows the owner to withdraw the free balance to the deed contract", async function() {
             assert.equal(await web3.eth.getBalance(erc721.address), 0);
             
-            // Withdraw free balance from the auction contract to the token contract.
+            // Withdraw free balance from the auction contract to the deed contract.
             await auction.withdrawFreeBalance({from: owner});
             
             // After transferring out the owed balance and free balance,
             // there should be no balance left in the auction contract.
             assert.equal(await web3.eth.getBalance(auction.address), 0);
             
-            // Token contract should now have all the free balance.
+            // Deed contract should now have all the free balance.
             assert.isAtLeast(await web3.eth.getBalance(erc721.address), actualPrice.times(0.035));
         });
         

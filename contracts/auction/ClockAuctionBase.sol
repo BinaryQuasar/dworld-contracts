@@ -1,13 +1,13 @@
 pragma solidity ^0.4.18;
 
-import "../ERC721Draft.sol";
+import "../ERC721.sol";
 
 /// @title The internal clock auction functionality.
 /// Inspired by CryptoKitties' clock auction
 contract ClockAuctionBase {
 
     // Address of the ERC721 contract this auction is linked to.
-    ERC721 public tokenContract;
+    ERC721 public deedContract;
 
     // Fee per successful auction in 1/1000th of a percentage.
     uint256 public fee;
@@ -18,7 +18,7 @@ contract ClockAuctionBase {
     // Amount of ether yet to be paid per beneficiary.
     mapping (address => uint256) public addressToEtherOwed;
     
-    /// @dev Represents a non-fungible token auction.
+    /// @dev Represents a deed auction.
     /// Care has been taken to ensure the auction fits in
     /// two 256-bit words.
     struct Auction {
@@ -32,9 +32,9 @@ contract ClockAuctionBase {
     mapping (uint256 => Auction) identifierToAuction;
     
     // Events
-    event AuctionCreated(address indexed seller, uint256 indexed tokenId, uint256 startPrice, uint256 endPrice, uint256 duration);
-    event AuctionSuccessful(address indexed buyer, uint256 indexed tokenId, uint256 totalPrice);
-    event AuctionCancelled(uint256 indexed tokenId);
+    event AuctionCreated(address indexed seller, uint256 indexed deedId, uint256 startPrice, uint256 endPrice, uint256 duration);
+    event AuctionSuccessful(address indexed buyer, uint256 indexed deedId, uint256 totalPrice);
+    event AuctionCancelled(uint256 indexed deedId);
     
     /// @dev Modifier to check whether the value can be stored in a 64 bit uint.
     modifier fitsIn64Bits(uint256 _value) {
@@ -48,11 +48,11 @@ contract ClockAuctionBase {
         _;
     }
     
-    function ClockAuctionBase(address _tokenContractAddress, uint256 _fee) public {
-        tokenContract = ERC721(_tokenContractAddress);
+    function ClockAuctionBase(address _deedContractAddress, uint256 _fee) public {
+        deedContract = ERC721(_deedContractAddress);
         
         // Contract must indicate support for ERC721 through its interface signature.
-        require(tokenContract.supportsInterface(0x19595b11));
+        require(deedContract.supportsInterface(0xda671b9b));
         
         // Fee must be between 0 and 100%.
         require(0 <= _fee && _fee <= 100000);
@@ -65,30 +65,30 @@ contract ClockAuctionBase {
         return auction.startedAt > 0;
     }
     
-    /// @dev Put the token into escrow, thereby taking ownership of it.
-    /// @param _tokenId The identifier of the token to place into escrow.
-    function _escrow(uint256 _tokenId) internal {
+    /// @dev Put the deed into escrow, thereby taking ownership of it.
+    /// @param _deedId The identifier of the deed to place into escrow.
+    function _escrow(uint256 _deedId) internal {
         // Throws if the transfer fails
-        tokenContract.takeOwnership(_tokenId);
+        deedContract.takeOwnership(_deedId);
     }
     
     /// @dev Create the auction.
-    /// @param _tokenId The identifier of the token to create the auction for.
+    /// @param _deedId The identifier of the deed to create the auction for.
     /// @param auction The auction to create.
-    function _createAuction(uint256 _tokenId, Auction auction) internal {
+    function _createAuction(uint256 _deedId, Auction auction) internal {
         // Add the auction to the auction mapping.
-        identifierToAuction[_tokenId] = auction;
+        identifierToAuction[_deedId] = auction;
         
         // Trigger auction created event.
-        AuctionCreated(auction.seller, _tokenId, auction.startPrice, auction.endPrice, auction.duration);
+        AuctionCreated(auction.seller, _deedId, auction.startPrice, auction.endPrice, auction.duration);
     }
     
     /// @dev Bid on an auction.
     /// @param _buyer The address of the buyer.
     /// @param _value The value sent by the sender (in ether).
-    /// @param _tokenId The identifier of the token to bid on.
-    function _bid(address _buyer, uint256 _value, uint256 _tokenId) internal {
-        Auction storage auction = identifierToAuction[_tokenId];
+    /// @param _deedId The identifier of the deed to bid on.
+    function _bid(address _buyer, uint256 _value, uint256 _deedId) internal {
+        Auction storage auction = identifierToAuction[_deedId];
         
         // The auction must be active.
         require(_activeAuction(auction));
@@ -112,54 +112,54 @@ contract ClockAuctionBase {
             _assignProceeds(seller, proceeds);
         }
         
-        AuctionSuccessful(_buyer, _tokenId, price);
+        AuctionSuccessful(_buyer, _deedId, price);
         
         // The bid was won!
-        _winBid(seller, _buyer, _tokenId, price);
+        _winBid(seller, _buyer, _deedId, price);
         
         // Remove the auction (we do this at the end, as
         // winBid might require some additional information
         // that will be removed when _removeAuction is
         // called. As we do not transfer funds here, we do
         // not have to worry about re-entry attacks.
-        _removeAuction(_tokenId);
+        _removeAuction(_deedId);
     }
 
-    /// @dev Perform the bid win logic (in this case: transfer the token).
+    /// @dev Perform the bid win logic (in this case: transfer the deed).
     /// @param _seller The address of the seller.
     /// @param _winner The address of the winner.
-    /// @param _tokenId The identifier of the token.
+    /// @param _deedId The identifier of the deed.
     /// @param _price The price the auction was bought at.
-    function _winBid(address _seller, address _winner, uint256 _tokenId, uint256 _price) internal {
-        _transfer(_winner, _tokenId);
+    function _winBid(address _seller, address _winner, uint256 _deedId, uint256 _price) internal {
+        _transfer(_winner, _deedId);
     }
     
     /// @dev Cancel an auction.
-    /// @param _tokenId The identifier of the token for which the auction should be cancelled.
+    /// @param _deedId The identifier of the deed for which the auction should be cancelled.
     /// @param auction The auction to cancel.
-    function _cancelAuction(uint256 _tokenId, Auction auction) internal {
+    function _cancelAuction(uint256 _deedId, Auction auction) internal {
         // Remove the auction
-        _removeAuction(_tokenId);
+        _removeAuction(_deedId);
         
-        // Transfer the token back to the seller
-        _transfer(auction.seller, _tokenId);
+        // Transfer the deed back to the seller
+        _transfer(auction.seller, _deedId);
         
         // Trigger auction cancelled event.
-        AuctionCancelled(_tokenId);
+        AuctionCancelled(_deedId);
     }
     
     /// @dev Remove an auction.
-    /// @param _tokenId The identifier of the token for which the auction should be removed.
-    function _removeAuction(uint256 _tokenId) internal {
-        delete identifierToAuction[_tokenId];
+    /// @param _deedId The identifier of the deed for which the auction should be removed.
+    function _removeAuction(uint256 _deedId) internal {
+        delete identifierToAuction[_deedId];
     }
     
-    /// @dev Transfer a token owned by this contract to another address.
-    /// @param _to The address to transfer the token to.
-    /// @param _tokenId The identifier of the token.
-    function _transfer(address _to, uint256 _tokenId) internal {
+    /// @dev Transfer a deed owned by this contract to another address.
+    /// @param _to The address to transfer the deed to.
+    /// @param _deedId The identifier of the deed.
+    function _transfer(address _to, uint256 _deedId) internal {
         // Throws if the transfer fails
-        tokenContract.transfer(_to, _tokenId);
+        deedContract.transfer(_to, _deedId);
     }
     
     /// @dev Assign proceeds to an address.

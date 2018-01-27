@@ -16,28 +16,28 @@ contract DWorldCore is DWorldAuction {
     }
 
     /// @notice Set the data associated with a plot.
-    function setPlotData(uint256 _tokenId, string name, string description, string imageUrl, string infoUrl)
+    function setPlotData(uint256 _deedId, string name, string description, string imageUrl, string infoUrl)
         public
         whenNotPaused
     {
         // The sender requesting the data update should be
         // the owner (without an active renter) or should
         // be the active renter.
-        require(_owns(msg.sender, _tokenId) && identifierToRentPeriodEndTimestamp[_tokenId] < now || _rents(msg.sender, _tokenId));
+        require(_owns(msg.sender, _deedId) && identifierToRentPeriodEndTimestamp[_deedId] < now || _rents(msg.sender, _deedId));
     
         // Set the data
-        _setPlotData(_tokenId, name, description, imageUrl, infoUrl);
+        _setPlotData(_deedId, name, description, imageUrl, infoUrl);
     }
     
     /// @notice Set the data associated with multiple plots.
-    function setPlotDataMultiple(uint256[] _tokenIds, string name, string description, string imageUrl, string infoUrl)
+    function setPlotDataMultiple(uint256[] _deedIds, string name, string description, string imageUrl, string infoUrl)
         public
         whenNotPaused
     {
-        for (uint256 i = 0; i < _tokenIds.length; i++) {
-            uint256 _tokenId = _tokenIds[i];
+        for (uint256 i = 0; i < _deedIds.length; i++) {
+            uint256 _deedId = _deedIds[i];
         
-            setPlotData(_tokenId, name, description, imageUrl, infoUrl);
+            setPlotData(_deedId, name, description, imageUrl, infoUrl);
         }
     }
     
