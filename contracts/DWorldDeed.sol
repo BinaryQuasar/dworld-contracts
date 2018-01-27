@@ -135,6 +135,9 @@ contract DWorldDeed is DWorldBase, ERC721, ERC721Metadata {
     /// @param _to The address to approve taking ownership.
     /// @param _deedIds The identifiers of the deeds to give approval for.
     function approveMultiple(address _to, uint256[] _deedIds) public whenNotPaused {
+        // Ensure the sender is not approving themselves.
+        require(msg.sender != _to);
+    
         for (uint256 i = 0; i < _deedIds.length; i++) {
             uint256 _deedId = _deedIds[i];
             
