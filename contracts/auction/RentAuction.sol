@@ -55,7 +55,7 @@ contract RentAuction is ClockAuction {
     
         uint256 rentPeriod = identifierToRentPeriod[_deedId];
         if (rentPeriod == 0) {
-            rentPeriod = 604800; // 1 week
+            rentPeriod = 604800; // 1 week by default
         }
     
         // Rent the deed out to the winner.

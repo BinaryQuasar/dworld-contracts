@@ -74,7 +74,7 @@ contract DWorldMinting is DWorldRenting {
                 // The full allowance has been used.
                 delete freeClaimAllowance[msg.sender];
                 
-                // Cannot underflow, as freeAmount <= buyAmount.
+                // The subtraction cannot underflow, as freeAmount <= buyAmount.
                 etherRequired = unclaimedPlotPrice.mul(buyAmount - freeAmount);
             }
         } else {

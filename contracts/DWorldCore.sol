@@ -10,7 +10,7 @@ contract DWorldCore is DWorldAuction {
 
     /// @notice Only to be used when this contract is significantly broken,
     /// and an upgrade is required.
-    function setUpgradedContractAddress(address _upgradedContractAddress) public onlyOwner whenPaused {
+    function setUpgradedContractAddress(address _upgradedContractAddress) external onlyOwner whenPaused {
         upgradedContractAddress = _upgradedContractAddress;
         ContractUpgrade(_upgradedContractAddress);
     }
@@ -31,7 +31,7 @@ contract DWorldCore is DWorldAuction {
     
     /// @notice Set the data associated with multiple plots.
     function setPlotDataMultiple(uint256[] _deedIds, string name, string description, string imageUrl, string infoUrl)
-        public
+        external
         whenNotPaused
     {
         for (uint256 i = 0; i < _deedIds.length; i++) {

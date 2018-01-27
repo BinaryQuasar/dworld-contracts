@@ -1,7 +1,7 @@
 pragma solidity ^0.4.18;
 
 /// @title Interface for contracts conforming to ERC-721: Deed Standard
-/// @author William Entriken (https://phor.net), et. al.
+/// @author William Entriken (https://phor.net), et al.
 /// @dev Specification at https://github.com/ethereum/EIPs/pull/841 (DRAFT)
 interface ERC721 {
 

@@ -58,7 +58,7 @@ contract ClockAuction is ClockAuctionBase, Pausable {
         // Get the owner of the deed to be auctioned
         address deedOwner = deedContract.ownerOf(_deedId);
     
-        // Caller must either be the deed contract or the owner of the deed.
+        // Caller must either be the deed contract or the owner of the deed
         // to prevent abuse.
         require(
             msg.sender == address(deedContract) ||
@@ -146,7 +146,8 @@ contract ClockAuction is ClockAuctionBase, Pausable {
     /// @notice Withdraw (unowed) contract balance.
     function withdrawFreeBalance() external {
         // Calculate the free (unowed) balance. This never underflows, as
-        // outstandingEther is guaranteed to be less than freeBalance.        
+        // outstandingEther is guaranteed to be less than or equal to the
+        // contract balance.
         uint256 freeBalance = this.balance - outstandingEther;
         
         address deedContractAddress = address(deedContract);
