@@ -41,8 +41,33 @@ contract DWorldCore is DWorldAuction {
         }
     }
     
-    /// @notice Allow the CFO to withdraw balance available to this contract.
-    function withdrawBalance() external onlyCFO {
-        cfoAddress.transfer(this.balance);
+    /// @notice Withdraw Ether owed to the sender.
+    function withdrawBalance() external {
+        uint256 etherOwed = addressToEtherOwed[msg.sender];
+        
+        // Ensure Ether is owed to the sender.
+        require(etherOwed > 0);
+         
+        // Set Ether owed to 0.
+        delete addressToEtherOwed[msg.sender];
+        
+        // Subtract from total outstanding balance. etherOwed is guaranteed
+        // to be less than or equal to outstandingEther, so this cannot
+        // underflow.
+        outstandingEther -= etherOwed;
+        
+        // Transfer Ether owed to the sender (not susceptible to re-entry
+        // attack, as the Ether owed is set to 0 before the transfer takes place).
+        msg.sender.transfer(etherOwed);
+    }
+    
+    /// @notice Withdraw (unowed) contract balance.
+    function withdrawFreeBalance() external onlyCFO {
+        // Calculate the free (unowed) balance. This never underflows, as
+        // outstandingEther is guaranteed to be less than or equal to the
+        // contract balance.
+        uint256 freeBalance = this.balance - outstandingEther;
+        
+        cfoAddress.transfer(freeBalance);
     }
 }

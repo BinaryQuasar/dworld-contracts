@@ -1,31 +1,9 @@
 pragma solidity ^0.4.18;
 
-import "./DWorldRenting.sol";
+import "./DWorldFinance.sol";
 
 /// @dev Holds functionality for minting new plot deeds.
-contract DWorldMinting is DWorldRenting {
-    uint256 public unclaimedPlotPrice = 0.0025 ether;
-    mapping (address => uint256) freeClaimAllowance;
-    
-    /// @notice Sets the new price for unclaimed plots.
-    /// @param _unclaimedPlotPrice The new price for unclaimed plots.
-    function setUnclaimedPlotPrice(uint256 _unclaimedPlotPrice) external onlyCFO {
-        unclaimedPlotPrice = _unclaimedPlotPrice;
-    }
-    
-    /// @notice Set the free claim allowance for an address.
-    /// @param addr The address to set the free claim allowance for.
-    /// @param allowance The free claim allowance to set.
-    function setFreeClaimAllowance(address addr, uint256 allowance) external onlyCFO {
-        freeClaimAllowance[addr] = allowance;
-    }
-    
-    /// @notice Get the free claim allowance of an address.
-    /// @param addr The address to get the free claim allowance of.
-    function freeClaimAllowanceOf(address addr) external view returns (uint256) {
-        return freeClaimAllowance[addr];
-    }
-       
+contract DWorldMinting is DWorldFinance {       
     /// @notice Buy an unclaimed plot.
     /// @param _deedId The unclaimed plot to buy.
     function claimPlot(uint256 _deedId) external payable whenNotPaused {
@@ -82,9 +60,6 @@ contract DWorldMinting is DWorldRenting {
             etherRequired = unclaimedPlotPrice.mul(buyAmount);
         }
         
-        // Ensure enough ether is supplied.
-        require(msg.value >= etherRequired);
-        
         uint256 offset = plots.length;
         
         // Allocate additional memory for the plots array
@@ -109,7 +84,13 @@ contract DWorldMinting is DWorldRenting {
             
             // Set the plot data.
             _setPlotData(_deedId, name, description, imageUrl, infoUrl);
+            
+            // Calculate and assign claim dividends.
+            etherRequired = etherRequired.add(_calculateAndAssignClaimDividends(_deedId));
         }
+        
+        // Ensure enough ether is supplied.
+        require(msg.value >= etherRequired);
         
         // Calculate the excess ether sent
         // msg.value is greater than or equal to etherRequired,
