@@ -127,12 +127,16 @@ contract DWorldFinance is DWorldRenting {
         // Get existing surrounding plots.
         uint256[] memory claimedSurroundingPlots = _claimedSurroundingPlots(identifier);
         
-        // Calculate the claim dividend.
-        totalClaimDividend = claimedSurroundingPlots.length.mul(claimDividend());
+        // Keep track of the claim dividend.
+        uint256 _claimDividend = claimDividend();
+        totalClaimDividend = 0;
         
         // Assign claim dividend.
         for (uint256 i = 0; i < claimedSurroundingPlots.length; i++) {
-            _assignClaimDividend(msg.sender, identifierToOwner[claimedSurroundingPlots[i]], identifier, claimedSurroundingPlots[i]);
+            if (identifierToOwner[claimedSurroundingPlots[i]] != msg.sender) {
+                totalClaimDividend = totalClaimDividend.add(_claimDividend);
+                _assignClaimDividend(msg.sender, identifierToOwner[claimedSurroundingPlots[i]], identifier, claimedSurroundingPlots[i]);
+            }
         }
     }
 }
