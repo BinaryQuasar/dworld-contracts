@@ -1,9 +1,9 @@
 pragma solidity ^0.4.18;
 
-import "./DWorldAuction.sol";
+import "./DWorldMinting.sol";
 
 /// @dev Implements highest-level DWorld functionality.
-contract DWorldCore is DWorldAuction {
+contract DWorldCore is DWorldMinting {
     /// If this contract is broken, this will be used to publish the address at which an upgraded contract can be found
     address public upgradedContractAddress;
     event ContractUpgrade(address upgradedContractAddress);
@@ -21,9 +21,8 @@ contract DWorldCore is DWorldAuction {
         whenNotPaused
     {
         // The sender requesting the data update should be
-        // the owner (without an active renter) or should
-        // be the active renter.
-        require(_owns(msg.sender, _deedId) && identifierToRentPeriodEndTimestamp[_deedId] < now || _rents(msg.sender, _deedId));
+        // the owner.
+        require(_owns(msg.sender, _deedId));
     
         // Set the data
         _setPlotData(_deedId, name, description, imageUrl, infoUrl);

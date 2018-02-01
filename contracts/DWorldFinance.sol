@@ -1,9 +1,9 @@
 pragma solidity ^0.4.18;
 
-import "./DWorldRenting.sol";
+import "./DWorldDeed.sol";
 
 /// @dev Holds functionality for finance related to plots.
-contract DWorldFinance is DWorldRenting {    
+contract DWorldFinance is DWorldDeed {    
     /// Total amount of ether yet to be paid to auction beneficiaries.
     uint256 public outstandingEther = 0 ether;
     

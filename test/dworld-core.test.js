@@ -4,8 +4,6 @@ const utils = require("./utils");
 
 // Test DWorld core
 const DWorldCore = artifacts.require("./DWorldCore.sol");
-const SaleAuction = artifacts.require("./auction/SaleAuction.sol");
-const RentAuction = artifacts.require("./auction/RentAuction.sol");
 
 contract("DWorldCore", function(accounts) {
     const owner = accounts[0];
@@ -15,8 +13,6 @@ contract("DWorldCore", function(accounts) {
     const user3 = accounts[4];
     
     let core;
-    let saleAuction;
-    let rentAuction;
     let gasPrice;
     let unclaimedPlotPrice;
     let plotA = 3014702;
@@ -38,16 +34,6 @@ contract("DWorldCore", function(accounts) {
         
         // User1 mints a few deeds by sending Ether
         await core.claimPlotMultiple([plotA, plotB, plotC, plotD], {from: user1, value: 4 * unclaimedPlotPrice});
-    }
-    
-    async function deployAuctionContracts() {
-        debug("Deploying auction contracts.");
-        
-        saleAuction = await SaleAuction.new(core.address, 3500, {from: owner, gas: 5000000});
-        rentAuction = await RentAuction.new(core.address, 3500, {from: owner, gas: 5000000});
-        
-        await core.setSaleAuctionContractAddress(saleAuction.address);
-        await core.setRentAuctionContractAddress(rentAuction.address);
     }
     
     describe("Initial state", function() {
@@ -200,75 +186,6 @@ contract("DWorldCore", function(accounts) {
         });
     });
     
-    describe("Renting", function() {
-        beforeEach(deployContract);
-        beforeEach(mintDeeds);
-        
-        it("should have no renter by default", async function() {
-            var renterAndPeriodEnd = await core.renterOf(plotA);
-            assert.equal(renterAndPeriodEnd[0], 0);
-            assert.equal(renterAndPeriodEnd[1], 0);
-        });
-        
-        it("should prevent non-deed holder from renting a deed out", async function() {
-            await utils.assertRevert(core.rentOut(user3, 60, plotA, {from: user2}));
-        });
-        
-        it("allows deed holder to rent out a plot", async function() {
-            await core.rentOut(user2, 60, plotA, {from: user1});
-            
-            // Get tx timestamp
-            var timestamp = utils.latestTime();
-            
-            // Owner should remain unchanged
-            assert.equal(await core.ownerOf(plotA), user1);
-            
-            var renterAndPeriodEnd = await core.renterOf(plotA);
-            assert.equal(renterAndPeriodEnd[0], user2);
-            assert.equal(renterAndPeriodEnd[1], timestamp + 60);
-        });
-        
-        it("prevents renting out a plot that is already rented out", async function() {
-            await core.rentOut(user2, 60, plotA, {from: user1});
-            await utils.assertRevert(core.rentOut(user3, 60, plotA, {from: user1}));
-        });
-        
-        it("after rent period expiry there should be no renter", async function() {
-            await core.rentOut(user2, 60, plotA, {from: user1});
-            
-            var renterAndPeriodEnd = await core.renterOf(plotA);
-            assert.equal(renterAndPeriodEnd[0], user2);
-            
-            // Increase time to end of rent period
-            await utils.increaseTime(65); // Increase time by a bit more than 60 seconds to account for minor time fluctuations
-            
-            renterAndPeriodEnd = await core.renterOf(plotA);
-            assert.equal(renterAndPeriodEnd[0], 0);
-            assert.equal(renterAndPeriodEnd[1], 0);
-        });
-        
-        it("should prevent renter from transferring the deed", async function() {
-            await core.rentOut(user2, 60, plotA, {from: user1});
-            await utils.assertRevert(core.transfer(user3, plotA, {from: user2}));
-        });
-        
-        it("allows ownership transfer with active renter", async function() {
-            await core.rentOut(user2, 1800, plotA, {from: user1});
-            
-            // Get tx timestamp
-            var timestamp = utils.latestTime();
-            
-            await core.transfer(user3, plotA, {from: user1});
-            
-            assert.equal(await core.ownerOf(plotA), user3);
-            
-            // Renter should remain unchanged
-            var renterAndPeriodEnd = await core.renterOf(plotA);
-            assert.equal(renterAndPeriodEnd[0], user2);
-            assert.equal(renterAndPeriodEnd[1], timestamp + 1800);
-        });
-    })
-    
     describe("Plot data", function() {
         beforeEach(deployContract);
         beforeEach(mintDeeds);
@@ -278,57 +195,6 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("can be updated by owner", async function() {
-            var watcher = core.SetData();
-            
-            await core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1});
-            
-            var logs = await watcher.get();
-            assert.equal(logs.length, 1);
-            
-            var data = logs[0].args;
-            assert.equal(data.deedId, plotA);
-            assert.equal(data.name, "TestName");
-            assert.equal(data.description, "TestDescription");
-            assert.equal(data.imageUrl, 'TestImageUrl');
-            assert.equal(data.infoUrl, 'TestInfoUrl');
-        });
-        
-        it("should prevent updating by owner if a renter is assigned", async function() {
-            await core.rentOut(user2, 1800, plotA, {from: user1});
-            await utils.assertRevert(core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1}));
-        });
-        
-        it("allows renter to update plot data", async function() {
-            await core.rentOut(user2, 1800, plotA, {from: user1});
-            
-            var watcher = core.SetData();
-            
-            await core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user2});
-            
-            var logs = await watcher.get();
-            assert.equal(logs.length, 1);
-            
-            var data = logs[0].args;
-            assert.equal(data.deedId, plotA);
-            assert.equal(data.name, "TestName");
-            assert.equal(data.description, "TestDescription");
-            assert.equal(data.imageUrl, 'TestImageUrl');
-            assert.equal(data.infoUrl, 'TestInfoUrl');
-        });
-        
-        it("should prevent renter from updating plot data after rent period has expired", async function() {
-            await core.rentOut(user2, 60, plotA, {from: user1});
-            
-            await utils.increaseTime(65);
-            
-            await utils.assertRevert(core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user2}));
-        });
-        
-        it("allows owner to update plot data after rent period has expired", async function() {
-            await core.rentOut(user2, 60, plotA, {from: user1});
-            
-            await utils.increaseTime(65);
-            
             var watcher = core.SetData();
             
             await core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1});
@@ -591,134 +457,6 @@ contract("DWorldCore", function(accounts) {
             
             // balanceBefore - balanceAfter - gasCost = price paid for minting
             assert.deepEqual(balanceBefore.minus(balanceAfter).minus(gasCost).toNumber(), unclaimedPlotPrice.mul(3).toNumber());
-        });
-    });
-    
-    describe("Auctions", function() {
-        before(deployContract);
-        before(async function setCFO() {
-            await core.setCFO(cfo, {from: owner});
-        });
-        before(mintDeeds);
-        before(deployAuctionContracts);
-        
-        const oneEth = web3.toWei(new BigNumber("1"), 'ether');
-        const halfEth = web3.toWei(new BigNumber("0.5"), 'ether');
-        
-        // Keep track of total price of auctions and total amount paid to auctions
-        var totalPrice = new BigNumber("0");
-        var totalPaid = new BigNumber("0");
-        
-        it("should prevent non-deed holder from putting up auctions", async function() {
-            await utils.assertRevert(core.createSaleAuction(plotA, oneEth, oneEth, utils.duration.days(3), {from: user2}));
-            await utils.assertRevert(core.createRentAuction(plotB, oneEth, oneEth, utils.duration.days(3), utils.duration.weeks(4), {from: user2}));
-        });
-        
-        it("should prevent rented-out deed from being put up for a rent auction", async function() {
-            await core.rentOut(user2, 60, plotB, {from: user1});
-            await utils.assertRevert(core.createRentAuction(plotB, oneEth, oneEth, utils.duration.days(3), utils.duration.weeks(4), {from: user1}));
-        });
-        
-        it("allows deed owner to put up deed for auction", async function() {
-            // Wait for rent-out to expire
-            await utils.increaseTime(utils.duration.seconds(100));
-            
-            await core.createSaleAuction(plotA, oneEth, oneEth, utils.duration.days(3), {from: user1});
-            await core.createRentAuction(plotB, oneEth, oneEth, utils.duration.days(3), utils.duration.weeks(4), {from: user1});
-            
-            totalPrice = totalPrice.plus(oneEth.times(2));
-        });
-        
-        it("places deeds in auction escrow", async function() {
-            assert.equal(await core.ownerOf(plotA), saleAuction.address);
-            assert.equal(await core.ownerOf(plotB), rentAuction.address);
-        });
-        
-        it("does not fulfill auction when the bid is too low", async function() {
-            await utils.assertRevert(saleAuction.bid(plotA, {from: user2, value: halfEth}));
-            await utils.assertRevert(rentAuction.bid(plotB, {from: user2, value: halfEth}));
-        });
-        
-        it("does not fulfill sale auctions as rent and vice-versa", async function() {
-            await utils.assertRevert(saleAuction.bid(plotB, {from: user2, value: oneEth}));
-            await utils.assertRevert(rentAuction.bid(plotA, {from: user2, value: oneEth}));
-        });
-        
-        it("transfers deeds to winners of sale auctions", async function() {            
-            await saleAuction.bid(plotA, {from: user2, value: oneEth});
-            
-            // Deed is transferred to new owner
-            assert.equal(await core.ownerOf(plotA), user2);
-            
-            totalPaid = totalPaid.plus(oneEth);
-        });
-        
-        it("grants renter status to winners of rent auctions", async function() {
-            await rentAuction.bid(plotB, {from: user3, value: oneEth.times(5)});
-            var timestamp = utils.latestTime();
-            
-            var [renter, rentPeriodEnd] = await core.renterOf(plotB);
-            
-            // Renter status is granted
-            assert.equal(renter, user3);
-            assert.equal(rentPeriodEnd.toNumber(), timestamp + utils.duration.weeks(4));
-            
-            // Deed is transferred back to original owner
-            assert.equal(await core.ownerOf(plotB), user1);
-            
-            totalPaid = totalPaid.plus(oneEth.times(5));
-        });
-        
-        it("should prevent non-CFO users from withdrawing auction funds to the core contract", async function() {
-            await utils.assertRevert(core.withdrawFreeAuctionBalances({from: owner}));
-            await utils.assertRevert(core.withdrawFreeAuctionBalances({from: user1}));
-        });
-        
-        it("successfully withdraws auction funds to the core contract", async function() {            
-            var balanceBefore = await web3.eth.getBalance(core.address);
-            await core.withdrawFreeAuctionBalances({from: cfo});
-            
-            var balanceAfter = await web3.eth.getBalance(core.address);
-            
-            var totalReceived = totalPaid.minus(totalPrice).add(totalPrice.times(0.035));
-            assert.equal(balanceAfter.minus(balanceBefore).toNumber(), totalReceived.toNumber());
-        });
-        
-        it("allows single-step withdrawal of outstanding Ether on both auction contracts", async function() {
-            var saleProceedsOwed = await saleAuction.addressToEtherOwed(user1);
-            var rentProceedsOwed = await rentAuction.addressToEtherOwed(user1);
-            
-            var balanceBefore = await web3.eth.getBalance(user1);
-            var tx = await core.withdrawAuctionBalances({from: user1});
-            
-            var balanceAfter = await web3.eth.getBalance(user1);
-            
-            // Calculate gas cost for the transaction
-            var gasCost = gasPrice.mul(tx.receipt.gasUsed);
-            
-            assert.deepEqual(balanceAfter.minus(balanceBefore).plus(gasCost).toNumber(), saleProceedsOwed.plus(rentProceedsOwed).toNumber());
-        });
-        
-        it("should not transfer funds to users without outstanding balance", async function() {
-            var balanceBefore = await web3.eth.getBalance(user1);
-            var tx = await core.withdrawAuctionBalances({from: user1});
-            
-            var balanceAfter = await web3.eth.getBalance(user1);
-            
-            // Calculate gas cost for the transaction
-            var gasCost = gasPrice.mul(tx.receipt.gasUsed);
-            
-            assert.deepEqual(balanceAfter.minus(balanceBefore).plus(gasCost).toNumber(), 0);
-            
-            balanceBefore = await web3.eth.getBalance(user2);
-            tx = await core.withdrawAuctionBalances({from: user2});
-            
-            balanceAfter = await web3.eth.getBalance(user2);
-            
-            // Calculate gas cost for the transaction
-            gasCost = gasPrice.mul(tx.receipt.gasUsed);
-            
-            assert.deepEqual(balanceAfter.minus(balanceBefore).plus(gasCost).toNumber(), 0);
         });
     });
     
