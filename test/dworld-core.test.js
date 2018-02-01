@@ -129,7 +129,7 @@ contract("DWorldCore", function(accounts) {
             assert.equal(await core.countOfDeeds(), 6);
         });
         
-        it("should correctly assign identifiers to minted dees", async function() {
+        it("should correctly assign identifiers to minted deeds", async function() {
             await core.claimPlotMultiple([0, 1], {from: user1, value: 2 * unclaimedPlotPrice});
             await core.claimPlot(42, {from: user1, value: unclaimedPlotPrice});
             
