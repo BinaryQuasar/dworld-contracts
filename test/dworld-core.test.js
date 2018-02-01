@@ -19,12 +19,10 @@ contract("DWorldCore", function(accounts) {
     let rentAuction;
     let gasPrice;
     let unclaimedPlotPrice;
-    let dividendPercentage;
-    let dividend;
     let plotA = 3014702;
-    let plotB = 3014704;
-    let plotC = 3145776;
-    let plotD = 3145778;
+    let plotB = 3014703;
+    let plotC = 3145774;
+    let plotD = 3145775;
     let plotUnowned = 1111111;
     
     async function deployContract() {
@@ -33,8 +31,6 @@ contract("DWorldCore", function(accounts) {
         core = await DWorldCore.new({from: owner, gas: 5000000});
         gasPrice = new BigNumber(core.constructor.class_defaults.gasPrice);
         unclaimedPlotPrice = await core.unclaimedPlotPrice();
-        dividendPercentage = (await core.dividendPercentage()).div(100000);
-        dividend = unclaimedPlotPrice.mul(dividendPercentage);
     }
     
     async function mintDeeds() {
@@ -129,12 +125,12 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("mints extreme (but valid) plots", async function() {
-            await core.claimPlotMultiple([0, 4294967295], {from: user1, value: unclaimedPlotPrice.mul(2).add(dividend)});
+            await core.claimPlotMultiple([0, 4294967295], {from: user1, value: 2 * unclaimedPlotPrice});
             assert.equal(await core.countOfDeeds(), 6);
         });
         
         it("should correctly assign identifiers to minted deeds", async function() {
-            await core.claimPlotMultiple([0, 1], {from: user1, value: unclaimedPlotPrice.mul(2).add(dividend.mul(6))});
+            await core.claimPlotMultiple([0, 1], {from: user1, value: 2 * unclaimedPlotPrice});
             await core.claimPlot(42, {from: user1, value: unclaimedPlotPrice});
             
             assert.equal(await core.plots(0), plotA);
@@ -363,7 +359,7 @@ contract("DWorldCore", function(accounts) {
             assert.equal(data.imageUrl, 'ImageUrl1');
             assert.equal(data.infoUrl, 'InfoUrl1');
             
-            await core.claimPlotMultipleWithData([1, 2], "TestName2", "TestDescription2", "ImageUrl2", "InfoUrl2", {from: user1, value: unclaimedPlotPrice.mul(2).add(dividend.mul(2))});
+            await core.claimPlotMultipleWithData([1, 2], "TestName2", "TestDescription2", "ImageUrl2", "InfoUrl2", {from: user1, value: 2 * unclaimedPlotPrice});
             
             logs = await watcher.get();
             assert.equal(logs.length, 2);
@@ -453,27 +449,27 @@ contract("DWorldCore", function(accounts) {
             
             // Overspend by 1.35 ether
             var overspend = web3.toWei(new BigNumber("1.35"), 'ether');
-            var tx = await core.claimPlotMultiple([0, 1, 2, 3], {from: user1, value: unclaimedPlotPrice.mul(4).add(dividend.mul(3)).add(overspend)});
+            var tx = await core.claimPlotMultiple([0, 1, 2, 3], {from: user1, value: unclaimedPlotPrice.mul(4).add(overspend)});
             var balanceAfter = await web3.eth.getBalance(user1);
             
             // Calculate gas cost for the transaction
             var gasCost = gasPrice.mul(tx.receipt.gasUsed);
             
             // balanceBefore - balanceAfter - gasCost = price paid for minting
-            assert.deepEqual(balanceBefore.minus(balanceAfter).minus(gasCost), unclaimedPlotPrice.mul(4).add(dividend.mul(3)));
+            assert.deepEqual(balanceBefore.minus(balanceAfter).minus(gasCost), unclaimedPlotPrice.mul(4));
         });
         
         it("should receive funds from minting", async function() {
-            assert.deepEqual(await web3.eth.getBalance(core.address), unclaimedPlotPrice.mul(4).add(dividend.mul(3)));
+            assert.deepEqual(await web3.eth.getBalance(core.address), unclaimedPlotPrice.mul(4));
         });
         
-        it("should prevent non-CFO from withdrawing funds", async function() {
+        it("should prevent non-CFO from withdrawing free funds", async function() {
             await utils.assertRevert(core.withdrawFreeBalance({from: owner}));
             await utils.assertRevert(core.withdrawFreeBalance({from: user1}));
         });
         
-        it("allows CFO to withdraw funds", async function() {
-            //var contractBalanceBefore = await web3.eth.getBalance(core.address);
+        it("allows CFO to withdraw free funds", async function() {
+            var contractBalanceBefore = await web3.eth.getBalance(core.address);
             var cfoBalanceBefore = await web3.eth.getBalance(cfo);
             
             // Withdraw balance
@@ -484,12 +480,11 @@ contract("DWorldCore", function(accounts) {
             
             var cfoBalanceAfter = await web3.eth.getBalance(cfo);
             
-            assert.deepEqual(cfoBalanceAfter.minus(cfoBalanceBefore).plus(gasCost), unclaimedPlotPrice.mul(4));
+            assert.deepEqual(cfoBalanceAfter.minus(cfoBalanceBefore).plus(gasCost), contractBalanceBefore);
         });
         
-        it("should have outstanding balance after withdrawing funds", async function() {
-            assert.equal(await web3.eth.getBalance(core.address), dividend.mul(3).toNumber());
-            assert.equal(await core.outstandingEther(), dividend.mul(3).toNumber());
+        it("should have no balance after withdrawing funds", async function() {
+            assert.equal(await web3.eth.getBalance(core.address), 0);
         });
         
         it("should prevent non-CFO from setting unclaimed plot mint price", async function() {
@@ -532,36 +527,36 @@ contract("DWorldCore", function(accounts) {
             await core.setFreeClaimAllowance(user1, 3, {from: cfo});
             await core.claimPlot(0, {from: user1});
             assert.equal(await core.freeClaimAllowanceOf(user1), 2);
-            await core.claimPlotMultiple([1, 2], {from: user1, value: dividend.mul(2)});
+            await core.claimPlotMultiple([1, 2], {from: user1});
             assert.equal(await core.freeClaimAllowanceOf(user1), 0);
         });
         
         it("allows using the entire allowance in one bulk mint", async function() {
             await core.setFreeClaimAllowance(user1, 6, {from: cfo});
-            await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: dividend.mul(5)});
+            await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1});
         });
         
         it("does not allow one user to make use of another user's free claim allowance", async function() {
             await core.setFreeClaimAllowance(user1, 3, {from: cfo});
-            await utils.assertRevert(core.claimPlotMultiple([1, 2], {from: user2, value: dividend}));
-            await core.claimPlotMultiple([1, 2], {from: user1, value: dividend});
+            await utils.assertRevert(core.claimPlotMultiple([1, 2], {from: user2}));
+            await core.claimPlotMultiple([1, 2], {from: user1});
         });
         
         it("should prevent minting more plots for free than the user has allowance for", async function() {
             // No allowance set.
-            await utils.assertRevert(core.claimPlotMultiple([1, 2], {from: user1, value: dividend}));
+            await utils.assertRevert(core.claimPlotMultiple([1, 2], {from: user1}));
             
             await core.setFreeClaimAllowance(user1, 3, {from: cfo});
-            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4], {from: user1, value: dividend.mul(3)}));
+            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4], {from: user1}));
             
-            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4], {from: user1, value: unclaimedPlotPrice.mul(0.5).add(dividend.mul(3))}));
+            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4], {from: user1, value: unclaimedPlotPrice.mul(0.5)}));
             
-            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: unclaimedPlotPrice.mul(2).add(dividend.mul(5))}));
+            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: unclaimedPlotPrice.mul(2)}));
         });
         
         it("allows minting more plots than the user has allowance for given enough ether", async function() {
             await core.setFreeClaimAllowance(user1, 3, {from: cfo});
-            await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: unclaimedPlotPrice.mul(3).add(dividend.mul(5))});
+            await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: unclaimedPlotPrice.mul(3)});
         });
         
         it("should refund all ether when paying in full with allowance", async function() {
@@ -571,14 +566,14 @@ contract("DWorldCore", function(accounts) {
             
             // Overspend by 1.35 ether
             var overspend = web3.toWei(new BigNumber("1.35"), 'ether');
-            var tx = await core.claimPlotMultiple([1, 2, 3], {from: user1, value: dividend.mul(2).add(overspend)});
+            var tx = await core.claimPlotMultiple([1, 2, 3], {from: user1, value: overspend});
             var balanceAfter = await web3.eth.getBalance(user1);
             
             // Calculate gas cost for the transaction
             var gasCost = gasPrice.mul(tx.receipt.gasUsed);
             
             // balanceBefore - balanceAfter - gasCost = price paid for minting
-            assert.equal(balanceBefore.minus(balanceAfter).minus(gasCost).toNumber(), dividend.mul(2).toNumber());
+            assert.deepEqual(balanceBefore.minus(balanceAfter).minus(gasCost).toNumber(), 0);
         });
         
         it("should refund exactly the correct amount of ether when paying in part with allowance", async function() {
@@ -588,14 +583,14 @@ contract("DWorldCore", function(accounts) {
             
             // Overspend by 1.35 ether
             var overspend = web3.toWei(new BigNumber("1.35"), 'ether');
-            var tx = await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: unclaimedPlotPrice.mul(3).add(dividend.mul(5)).add(overspend)});
+            var tx = await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: unclaimedPlotPrice.mul(3).add(overspend)});
             var balanceAfter = await web3.eth.getBalance(user1);
             
             // Calculate gas cost for the transaction
             var gasCost = gasPrice.mul(tx.receipt.gasUsed);
             
             // balanceBefore - balanceAfter - gasCost = price paid for minting
-            assert.equal(balanceBefore.minus(balanceAfter).minus(gasCost).toNumber(), unclaimedPlotPrice.mul(3).add(dividend.mul(5)).toNumber());
+            assert.deepEqual(balanceBefore.minus(balanceAfter).minus(gasCost).toNumber(), unclaimedPlotPrice.mul(3).toNumber());
         });
     });
     
