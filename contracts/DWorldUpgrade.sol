@@ -65,8 +65,14 @@ contract DWorldUpgrade is DWorldMinting {
             // Set the initial price paid for the plot.
             initialPricePaid[_deedId] = 0.0125 ether;
             
+            // The initial buyout price.
+            uint256 _initialBuyoutPrice = 0.075 ether;
+            
             // Set the initial buyout price.
-            identifierToBuyoutPrice[_deedId] = 0.075 ether;
+            identifierToBuyoutPrice[_deedId] = _initialBuyoutPrice;
+            
+            // Trigger the buyout price event.
+            SetBuyoutPrice(_deedId, _initialBuyoutPrice);
             
             // Mark the plot as being an original.
             identifierIsOriginal[_deedId] = true;
