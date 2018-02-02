@@ -79,7 +79,8 @@ contract DWorldFinance is DWorldDeed {
         buyoutFeePercentage = _buyoutFeePercentage;
     }
     
-    /// @notice The claim dividend to be paid for each adjacent plot.
+    /// @notice The claim dividend to be paid for each adjacent plot, and
+    /// as a flat dividend for each buyout.
     function claimDividend() public view returns (uint256) {
         return unclaimedPlotPrice.mul(claimDividendPercentage).div(100000);
     }
