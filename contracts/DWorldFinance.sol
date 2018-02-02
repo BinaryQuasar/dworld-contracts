@@ -53,8 +53,9 @@ contract DWorldFinance is DWorldDeed {
     /// @notice Sets the new dividend percentage for unclaimed plots.
     /// @param _claimDividendPercentage The new dividend percentage for unclaimed plots.
     function setClaimDividendPercentage(uint256 _claimDividendPercentage) external onlyCFO {
+        // Claim dividend percentage must be 10% at the least.
         // Claim dividend percentage may be 100% at the most.
-        require(0 <= _claimDividendPercentage && _claimDividendPercentage <= 100000);
+        require(10000 <= _claimDividendPercentage && _claimDividendPercentage <= 100000);
         
         claimDividendPercentage = _claimDividendPercentage;
     }
@@ -62,8 +63,9 @@ contract DWorldFinance is DWorldDeed {
     /// @notice Sets the new dividend percentage for buyouts.
     /// @param _buyoutDividendPercentage The new dividend percentage for buyouts.
     function setBuyoutDividendPercentage(uint256 _buyoutDividendPercentage) external onlyCFO {
-        // Dividend percentage may be 20% at the most.
-        require(0 <= _buyoutDividendPercentage && _buyoutDividendPercentage <= 20000);
+        // Buyout dividend must be 2% at the least.
+        // Buyout dividend percentage may be 20% at the most.
+        require(2000 <= _buyoutDividendPercentage && _buyoutDividendPercentage <= 20000);
         
         buyoutDividendPercentage = _buyoutDividendPercentage;
     }
@@ -72,7 +74,7 @@ contract DWorldFinance is DWorldDeed {
     /// @param _buyoutFeePercentage The new fee percentage for buyouts.
     function setBuyoutFeePercentage(uint256 _buyoutFeePercentage) external onlyCFO {
         // Buyout fee may be 6% at the most.
-        require(0 <= _buyoutFeePercentage && _buyoutFeePercentage <= 60000);
+        require(0 <= _buyoutFeePercentage && _buyoutFeePercentage <= 6000);
         
         buyoutFeePercentage = _buyoutFeePercentage;
     }
