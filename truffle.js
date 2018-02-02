@@ -8,7 +8,7 @@ module.exports = {
         return new HDWalletProvider(config.mnemonic, config.rinkebyProvider);
       },
       network_id: '4',
-      gasPrice: 2500000000, // 2.5 gwei
+      gasPrice: 125000000000, // 125 gwei
     },
     mainnet: {
       provider: function() {
