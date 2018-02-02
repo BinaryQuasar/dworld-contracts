@@ -29,7 +29,7 @@ contract("DWorldCore", function(accounts) {
     async function deployContract() {
         debug("Deploying DWorld core contract.");
         
-        core = await DWorldCore.new({from: owner, gas: 5000000});
+        core = await DWorldCore.new(0, 24, {from: owner, gas: 5000000});
         gasPrice = new BigNumber(core.constructor.class_defaults.gasPrice);
         unclaimedPlotPrice = await core.unclaimedPlotPrice();
         initialBuyoutPrice = unclaimedPlotPrice.mul(2.5);
@@ -591,23 +591,52 @@ contract("DWorldCore", function(accounts) {
             
         });
         
-        it("assigns claim dividends correctly", async function() {            
+        const enableBuyouts = async function() { 
+            await utils.increaseTime(utils.duration.days(1.1));
+        }
+        
+        it("should prevent buying a plot out until buyouts are enabled", async function() {
+            await core.claimPlot(centralPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(8))});
+            
+            // Disabled initially.
+            await utils.assertRevert(core.buyout(centralPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(8))}));
+            
+            await utils.increaseTime(utils.duration.days(0.9));
+            
+            // Disabled just before the enable time.
+            await utils.assertRevert(core.buyout(centralPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(8))}));
+            
+            await utils.increaseTime(utils.duration.days(0.2));
+            
+            // Enabled after enable time.
+            await core.buyout(centralPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(8))});
+        });
+        
+        it("assigns claim dividends correctly", async function() {
+            await enableBuyouts();
+            
             await core.claimPlot(centralPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(8))});
             assert.equal((await core.addressToEtherOwed(user1)).toNumber(), claimDividend.mul(4+4).toNumber());
             assert.equal((await core.addressToEtherOwed(user2)).toNumber(), claimDividend.mul(4).toNumber());
         });
         
         it("should prevent buying a plot out for less than the buyout price", async function() {
+            await enableBuyouts();
+            
             await core.claimPlot(centralPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(8))});
             await utils.assertRevert(core.buyout(centralPlot, {from: user2, value: unclaimedPlotPrice}));
         });
         
         it("allows buying out a plot for the asking price plus dividends", async function() {
+            await enableBuyouts();
+            
             await core.claimPlot(centralPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(8))});
             await core.buyout(centralPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(8))});
         });
         
         it("assigns buyout dividends correctly", async function() {
+            await enableBuyouts();
+            
             await core.claimPlot(centralPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(8))});
             await core.buyout(centralPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(8))});
             
@@ -627,6 +656,8 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("assigns buyout dividends correctly (if there is not an entire shell)", async function() {
+            await enableBuyouts();
+            
             await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(3))});
             await core.buyout(easternPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(3))});
             
@@ -646,6 +677,8 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("triggers events correctly", async function() {
+            await enableBuyouts();
+            
             let claimDividendWatcher = core.ClaimDividend();
             
             await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(8))});
@@ -748,11 +781,15 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("should prevent non-owner from updating the initial buyout price", async function() {
+            await enableBuyouts();
+            
             await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(3))});
             await utils.assertRevert(core.setInitialBuyoutPrice(easternPlot, unclaimedPlotPrice.mul(4), {from: user1}));
         });
         
         it("should prevent updating initial buyout price after plot has been bought out once", async function() {
+            await enableBuyouts();
+            
             await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(3))});
             await core.buyout(easternPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(3))});
             
@@ -760,6 +797,8 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("allows setting the initial buy out price if the plot has not been bought out before", async function() {
+            await enableBuyouts();
+            
             await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(3))});
             
             await core.setInitialBuyoutPrice(easternPlot, unclaimedPlotPrice.mul(4), {from: user3});
@@ -767,6 +806,8 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("should prevent setting the initial buyout price too low or too high", async function() {
+            await enableBuyouts();
+            
             await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(3))});
             
             await utils.assertRevert(core.setInitialBuyoutPrice(easternPlot, unclaimedPlotPrice.div(2), {from: user3}));
@@ -774,6 +815,8 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("correctly assigns the new buyout price", async function() {
+            await enableBuyouts();
+            
             await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(3))});
             await core.buyout(easternPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(3))});
             

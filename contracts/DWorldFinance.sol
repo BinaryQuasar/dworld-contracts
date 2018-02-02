@@ -47,6 +47,9 @@ contract DWorldFinance is DWorldDeed {
     /// @dev Event fired when the buyout price is manually changed for a plot.
     event SetBuyoutPrice(uint256 indexed deedId, uint256 newPrice);
     
+    /// @dev The time after which buyouts will be enabled. Set in the DWorldCore constructor.
+    uint256 buyoutsEnabledFromTimestamp;
+    
     /// @notice Sets the new price for unclaimed plots.
     /// @param _unclaimedPlotPrice The new price for unclaimed plots.
     function setUnclaimedPlotPrice(uint256 _unclaimedPlotPrice) external onlyCFO {
@@ -287,6 +290,9 @@ contract DWorldFinance is DWorldDeed {
         payable
         whenNotPaused 
     {
+        // Buyouts must be enabled.
+        require(buyoutsEnabledFromTimestamp <= block.timestamp);
+    
         address currentOwner = identifierToOwner[_deedId];
     
         // The plot must be owned before it can be bought out.
