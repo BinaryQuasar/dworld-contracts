@@ -27,7 +27,7 @@ contract DWorldFinance is DWorldDeed {
     mapping (address => uint256) freeClaimAllowance;
     
     /// Initial price paid for a plot.
-    mapping (uint256 => uint256) initialPricePaid;
+    mapping (uint256 => uint256) public initialPricePaid;
     
     /// Current plot price.
     mapping (uint256 => uint256) public identifierToBuyoutPrice;
