@@ -471,6 +471,18 @@ contract("DWorldCore", function(accounts) {
             // balanceBefore - balanceAfter - gasCost = price paid for minting
             assert.deepEqual(balanceBefore.minus(balanceAfter).minus(gasCost).toNumber(), unclaimedPlotPrice.mul(3).toNumber());
         });
+        
+        it("requires Ether to be sent for dividends", async function() {
+            await core.claimPlot(0, initialBuyoutPrice, {from: user2, value: unclaimedPlotPrice});
+            
+            await core.setFreeClaimAllowance(user1, 1, {from: cfo});
+            
+            // Should fail.
+            await utils.assertRevert(core.claimPlot(1, initialBuyoutPrice, {from: user1}));
+            
+            // Should succeed.
+            await core.claimPlot(1, initialBuyoutPrice, {from: user1, value: claimDividend});
+        });
     });
     
     describe("Setting dividend and fee percentages", function() {
