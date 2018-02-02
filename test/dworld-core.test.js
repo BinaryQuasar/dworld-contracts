@@ -15,6 +15,7 @@ contract("DWorldCore", function(accounts) {
     let core;
     let gasPrice;
     let unclaimedPlotPrice;
+    let initialBuyoutPrice;
     let plotA = 3014702;
     let plotB = 3014703;
     let plotC = 3145774;
@@ -27,13 +28,14 @@ contract("DWorldCore", function(accounts) {
         core = await DWorldCore.new({from: owner, gas: 5000000});
         gasPrice = new BigNumber(core.constructor.class_defaults.gasPrice);
         unclaimedPlotPrice = await core.unclaimedPlotPrice();
+        initialBuyoutPrice = unclaimedPlotPrice.mul(2.5);
     }
     
     async function mintDeeds() {
         debug("Buying some deeds.");
         
         // User1 mints a few deeds by sending Ether
-        await core.claimPlotMultiple([plotA, plotB, plotC, plotD], {from: user1, value: 4 * unclaimedPlotPrice});
+        await core.claimPlotMultiple([plotA, plotB, plotC, plotD], initialBuyoutPrice, {from: user1, value: 4 * unclaimedPlotPrice});
     }
     
     describe("Initial state", function() {
@@ -94,30 +96,30 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("only mints if enough ether is sent", async function() {
-            await utils.assertRevert(core.claimPlotMultiple([0, 1, 2, 3], {from: user1, value: 3 * unclaimedPlotPrice}));
+            await utils.assertRevert(core.claimPlotMultiple([0, 1, 2, 3], initialBuyoutPrice, {from: user1, value: 3 * unclaimedPlotPrice}));
         });
         
         it("should prevent minting invalid plots", async function() {
             // First valid id is 0
-            await utils.assertRevert(core.claimPlotMultiple([-1], {from: user1, value: 1 * unclaimedPlotPrice}));
+            await utils.assertRevert(core.claimPlotMultiple([-1], initialBuyoutPrice, {from: user1, value: 1 * unclaimedPlotPrice}));
             
             // Last valid id is 4294967295
-            await utils.assertRevert(core.claimPlotMultiple([4294967296], {from: user1, value: 1 * unclaimedPlotPrice}));
+            await utils.assertRevert(core.claimPlotMultiple([4294967296], initialBuyoutPrice, {from: user1, value: 1 * unclaimedPlotPrice}));
             
-            await utils.assertRevert(core.claimPlotMultiple([2000000000000000], {from: user1, value: 1 * unclaimedPlotPrice}));
+            await utils.assertRevert(core.claimPlotMultiple([2000000000000000], initialBuyoutPrice, {from: user1, value: 1 * unclaimedPlotPrice}));
             
             // Also rejects invalid ids between valid ids
-            await utils.assertRevert(core.claimPlotMultiple([0, 1, -1, 2, 3], {from: user1, value: 5 * unclaimedPlotPrice}));
+            await utils.assertRevert(core.claimPlotMultiple([0, 1, -1, 2, 3], initialBuyoutPrice, {from: user1, value: 5 * unclaimedPlotPrice}));
         });
         
         it("mints extreme (but valid) plots", async function() {
-            await core.claimPlotMultiple([0, 4294967295], {from: user1, value: 2 * unclaimedPlotPrice});
+            await core.claimPlotMultiple([0, 4294967295], initialBuyoutPrice, {from: user1, value: 2 * unclaimedPlotPrice});
             assert.equal(await core.countOfDeeds(), 6);
         });
         
         it("should correctly assign identifiers to minted deeds", async function() {
-            await core.claimPlotMultiple([0, 1], {from: user1, value: 2 * unclaimedPlotPrice});
-            await core.claimPlot(42, {from: user1, value: unclaimedPlotPrice});
+            await core.claimPlotMultiple([0, 1], initialBuyoutPrice, {from: user1, value: 2 * unclaimedPlotPrice});
+            await core.claimPlot(42, initialBuyoutPrice, {from: user1, value: unclaimedPlotPrice});
             
             assert.equal(await core.plots(0), plotA);
             assert.equal(await core.plots(1), plotB);
@@ -171,8 +173,8 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("should prevent minting the same plot twice", async function() {
-            await utils.assertRevert(core.claimPlotMultiple([10, 10], {from: user1, value: 2 * unclaimedPlotPrice}));
-            await utils.assertRevert(core.claimPlot(plotA, {from: user1, value: 1 * unclaimedPlotPrice}));
+            await utils.assertRevert(core.claimPlotMultiple([10, 10], initialBuyoutPrice, {from: user1, value: 2 * unclaimedPlotPrice}));
+            await utils.assertRevert(core.claimPlot(plotA, initialBuyoutPrice, {from: user1, value: 1 * unclaimedPlotPrice}));
         });
         
         it("creates correct metadata urls", async function() {
@@ -213,7 +215,7 @@ contract("DWorldCore", function(accounts) {
         it("allows setting data when claiming new plots", async function() {
             var watcher = core.SetData();
             
-            await core.claimPlotWithData(0, "TestName1", "TestDescription1", "ImageUrl1", "InfoUrl1", {from: user1, value: unclaimedPlotPrice});
+            await core.claimPlotWithData(0, initialBuyoutPrice, "TestName1", "TestDescription1", "ImageUrl1", "InfoUrl1", {from: user1, value: unclaimedPlotPrice});
             
             var logs = await watcher.get();
             assert.equal(logs.length, 1);
@@ -225,7 +227,7 @@ contract("DWorldCore", function(accounts) {
             assert.equal(data.imageUrl, 'ImageUrl1');
             assert.equal(data.infoUrl, 'InfoUrl1');
             
-            await core.claimPlotMultipleWithData([1, 2], "TestName2", "TestDescription2", "ImageUrl2", "InfoUrl2", {from: user1, value: 2 * unclaimedPlotPrice});
+            await core.claimPlotMultipleWithData([1, 2], initialBuyoutPrice, "TestName2", "TestDescription2", "ImageUrl2", "InfoUrl2", {from: user1, value: 2 * unclaimedPlotPrice});
             
             logs = await watcher.get();
             assert.equal(logs.length, 2);
@@ -315,7 +317,7 @@ contract("DWorldCore", function(accounts) {
             
             // Overspend by 1.35 ether
             var overspend = web3.toWei(new BigNumber("1.35"), 'ether');
-            var tx = await core.claimPlotMultiple([0, 1, 2, 3], {from: user1, value: unclaimedPlotPrice.mul(4).add(overspend)});
+            var tx = await core.claimPlotMultiple([0, 1, 2, 3], initialBuyoutPrice, {from: user1, value: unclaimedPlotPrice.mul(4).add(overspend)});
             var balanceAfter = await web3.eth.getBalance(user1);
             
             // Calculate gas cost for the transaction
@@ -386,43 +388,43 @@ contract("DWorldCore", function(accounts) {
         
         it("allows free claims", async function() {
             await core.setFreeClaimAllowance(user1, 3, {from: cfo});
-            await core.claimPlot(0, {from: user1});
+            await core.claimPlot(0, initialBuyoutPrice, {from: user1});
         });
         
         it("correctly subtracts free claim allowance", async function() {
             await core.setFreeClaimAllowance(user1, 3, {from: cfo});
-            await core.claimPlot(0, {from: user1});
+            await core.claimPlot(0, initialBuyoutPrice, {from: user1});
             assert.equal(await core.freeClaimAllowanceOf(user1), 2);
-            await core.claimPlotMultiple([1, 2], {from: user1});
+            await core.claimPlotMultiple([1, 2], initialBuyoutPrice, {from: user1});
             assert.equal(await core.freeClaimAllowanceOf(user1), 0);
         });
         
         it("allows using the entire allowance in one bulk mint", async function() {
             await core.setFreeClaimAllowance(user1, 6, {from: cfo});
-            await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1});
+            await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], initialBuyoutPrice, {from: user1});
         });
         
         it("does not allow one user to make use of another user's free claim allowance", async function() {
             await core.setFreeClaimAllowance(user1, 3, {from: cfo});
-            await utils.assertRevert(core.claimPlotMultiple([1, 2], {from: user2}));
-            await core.claimPlotMultiple([1, 2], {from: user1});
+            await utils.assertRevert(core.claimPlotMultiple([1, 2], initialBuyoutPrice, {from: user2}));
+            await core.claimPlotMultiple([1, 2], initialBuyoutPrice, {from: user1});
         });
         
         it("should prevent minting more plots for free than the user has allowance for", async function() {
             // No allowance set.
-            await utils.assertRevert(core.claimPlotMultiple([1, 2], {from: user1}));
+            await utils.assertRevert(core.claimPlotMultiple([1, 2], initialBuyoutPrice, {from: user1}));
             
             await core.setFreeClaimAllowance(user1, 3, {from: cfo});
-            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4], {from: user1}));
+            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4], initialBuyoutPrice, {from: user1}));
             
-            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4], {from: user1, value: unclaimedPlotPrice.mul(0.5)}));
+            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4], initialBuyoutPrice, {from: user1, value: unclaimedPlotPrice.mul(0.5)}));
             
-            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: unclaimedPlotPrice.mul(2)}));
+            await utils.assertRevert(core.claimPlotMultiple([1, 2, 3, 4, 5, 6], initialBuyoutPrice, {from: user1, value: unclaimedPlotPrice.mul(2)}));
         });
         
         it("allows minting more plots than the user has allowance for given enough ether", async function() {
             await core.setFreeClaimAllowance(user1, 3, {from: cfo});
-            await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: unclaimedPlotPrice.mul(3)});
+            await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], initialBuyoutPrice, {from: user1, value: unclaimedPlotPrice.mul(3)});
         });
         
         it("should refund all ether when paying in full with allowance", async function() {
@@ -432,7 +434,7 @@ contract("DWorldCore", function(accounts) {
             
             // Overspend by 1.35 ether
             var overspend = web3.toWei(new BigNumber("1.35"), 'ether');
-            var tx = await core.claimPlotMultiple([1, 2, 3], {from: user1, value: overspend});
+            var tx = await core.claimPlotMultiple([1, 2, 3], initialBuyoutPrice, {from: user1, value: overspend});
             var balanceAfter = await web3.eth.getBalance(user1);
             
             // Calculate gas cost for the transaction
@@ -449,7 +451,7 @@ contract("DWorldCore", function(accounts) {
             
             // Overspend by 1.35 ether
             var overspend = web3.toWei(new BigNumber("1.35"), 'ether');
-            var tx = await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], {from: user1, value: unclaimedPlotPrice.mul(3).add(overspend)});
+            var tx = await core.claimPlotMultiple([1, 2, 3, 4, 5, 6], initialBuyoutPrice, {from: user1, value: unclaimedPlotPrice.mul(3).add(overspend)});
             var balanceAfter = await web3.eth.getBalance(user1);
             
             // Calculate gas cost for the transaction
@@ -484,8 +486,8 @@ contract("DWorldCore", function(accounts) {
             await utils.assertRevert(core.takeOwnership(plotB, {from: user2}));
             await utils.assertRevert(core.takeOwnershipMultiple([plotB], {from: user2}));
             
-            await utils.assertRevert(core.claimPlot(0, {from: user1, value: unclaimedPlotPrice}));
-            await utils.assertRevert(core.claimPlotMultiple([0], {from: user1, value: unclaimedPlotPrice}));
+            await utils.assertRevert(core.claimPlot(0, initialBuyoutPrice, {from: user1, value: unclaimedPlotPrice}));
+            await utils.assertRevert(core.claimPlotMultiple([0], initialBuyoutPrice, {from: user1, value: unclaimedPlotPrice}));
             
             await utils.assertRevert(core.setPlotData(plotA, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1}));
             await utils.assertRevert(core.setPlotDataMultiple([plotA], "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1}));
@@ -505,7 +507,7 @@ contract("DWorldCore", function(accounts) {
             await core.transfer(user2, plotA, {from: user1});
             await core.takeOwnership(plotB, {from: user2});
             
-            await core.claimPlot(0, {from: user1, value: unclaimedPlotPrice});
+            await core.claimPlot(0, initialBuyoutPrice, {from: user1, value: unclaimedPlotPrice});
             
             await core.setPlotData(plotC, "TestName", "TestDescription", "TestImageUrl", "TestInfoUrl", {from: user1});
         });

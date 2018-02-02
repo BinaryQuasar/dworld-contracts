@@ -29,6 +29,9 @@ contract DWorldFinance is DWorldDeed {
     /// Current plot price.
     mapping (uint256 => uint256) identifierToBuyoutPrice;
     
+    /// Boolean indicating whether the plot has been bought out at least once.
+    mapping (uint256 => bool) identifierToBoughtOutOnce;
+    
     /// @dev Event fired when a dividend is paid for a new plot claim.
     event ClaimDividend(address indexed from, address indexed to, uint256 deedIdFrom, uint256 indexed deedIdTo, uint256 dividend);
     
@@ -37,6 +40,9 @@ contract DWorldFinance is DWorldDeed {
     
     /// @dev Event fired when a dividend is paid for a buyout.
     event BuyoutDividend(address indexed from, address indexed to, uint256 deedIdFrom, uint256 indexed deedIdTo, uint256 dividend);
+    
+    /// @dev Event fired when the buyout price is manually changed for a plot.
+    event SetBuyoutPrice(uint256 indexed deedId, uint256 newPrice);
     
     /// @notice Sets the new price for unclaimed plots.
     /// @param _unclaimedPlotPrice The new price for unclaimed plots.
@@ -295,6 +301,11 @@ contract DWorldFinance is DWorldDeed {
         // Calculate and set the new plot price.
         identifierToBuyoutPrice[_deedId] = nextBuyoutPrice(totalCost);
         
+        // Indicate the plot has been bought out at least once
+        if (!identifierToBoughtOutOnce[_deedId]) {
+            identifierToBoughtOutOnce[_deedId] = true;
+        }
+        
         // Calculate the excess ether sent.
         // msg.value is greater than or equal to totalCost,
         // so this cannot underflow.
@@ -305,5 +316,40 @@ contract DWorldFinance is DWorldDeed {
             // the owner is assigned before the transfer takes place).
             msg.sender.transfer(excess);
         }
+    }
+    
+    /// @notice Test whether a buyout price is valid.
+    /// @param _deedId The identifier of the plot to test the buyout price for.
+    /// @param price The buyout price to test.
+    function validBuyoutPrice(uint256 _deedId, uint256 price) public view returns (bool) {
+        // The initial buyout price can only be set to 10x the unclaimed plot price
+        // (or 100x for the original pre-migration plots).
+        uint256 mul = 10;
+        
+        if (identifierIsOriginal[_deedId]) {
+            mul = 100;
+        }
+        
+        return (price >= unclaimedPlotPrice && price <= unclaimedPlotPrice.mul(mul));
+    }
+    
+    /// @notice Manually set the initial buyout price of a plot.
+    /// @param _deedId The identifier of the plot to set the buyout price for.
+    /// @param price The value to set the buyout price to.
+    function setInitialBuyoutPrice(uint256 _deedId, uint256 price) external whenNotPaused {
+        // One can only set the buyout price of their own plots.
+        require(_owns(msg.sender, _deedId));
+        
+        // The initial buyout price can only be set if the plot has never been bought out before.
+        require(!identifierToBoughtOutOnce[_deedId]);
+        
+        // The buyout price must be valid.
+        require(validBuyoutPrice(_deedId, price));
+        
+        // Set the buyout price.
+        identifierToBuyoutPrice[_deedId] = price;
+        
+        // Trigger the buyout price event.
+        SetBuyoutPrice(_deedId, price);
     }
 }

@@ -6,36 +6,40 @@ import "./DWorldFinance.sol";
 contract DWorldMinting is DWorldFinance {       
     /// @notice Buy an unclaimed plot.
     /// @param _deedId The unclaimed plot to buy.
-    function claimPlot(uint256 _deedId) external payable whenNotPaused {
-        claimPlotWithData(_deedId, "", "", "", "");
+    /// @param _buyoutPrice The initial buyout price to set on the plot.
+    function claimPlot(uint256 _deedId, uint256 _buyoutPrice) external payable whenNotPaused {
+        claimPlotWithData(_deedId, _buyoutPrice, "", "", "", "");
     }
        
     /// @notice Buy an unclaimed plot.
     /// @param _deedId The unclaimed plot to buy.
+    /// @param _buyoutPrice The initial buyout price to set on the plot.
     /// @param name The name to give the plot.
     /// @param description The description to add to the plot.
     /// @param imageUrl The image url for the plot.
     /// @param infoUrl The info url for the plot.
-    function claimPlotWithData(uint256 _deedId, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
+    function claimPlotWithData(uint256 _deedId, uint256 _buyoutPrice, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
         uint256[] memory _deedIds = new uint256[](1);
         _deedIds[0] = _deedId;
         
-        claimPlotMultipleWithData(_deedIds, name, description, imageUrl, infoUrl);
+        claimPlotMultipleWithData(_deedIds, _buyoutPrice, name, description, imageUrl, infoUrl);
     }
     
     /// @notice Buy unclaimed plots.
     /// @param _deedIds The unclaimed plots to buy.
-    function claimPlotMultiple(uint256[] _deedIds) external payable whenNotPaused {
-        claimPlotMultipleWithData(_deedIds, "", "", "", "");
+    /// @param _buyoutPrice The initial buyout price to set on the plot.
+    function claimPlotMultiple(uint256[] _deedIds, uint256 _buyoutPrice) external payable whenNotPaused {
+        claimPlotMultipleWithData(_deedIds, _buyoutPrice, "", "", "", "");
     }
     
     /// @notice Buy unclaimed plots.
     /// @param _deedIds The unclaimed plots to buy.
+    /// @param _buyoutPrice The initial buyout price to set on the plot.
     /// @param name The name to give the plots.
     /// @param description The description to add to the plots.
     /// @param imageUrl The image url for the plots.
     /// @param infoUrl The info url for the plots.
-    function claimPlotMultipleWithData(uint256[] _deedIds, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
+    function claimPlotMultipleWithData(uint256[] _deedIds, uint256 _buyoutPrice, string name, string description, string imageUrl, string infoUrl) public payable whenNotPaused {
         uint256 buyAmount = _deedIds.length;
         uint256 etherRequired;
         if (freeClaimAllowance[msg.sender] > 0) {
@@ -90,7 +94,8 @@ contract DWorldMinting is DWorldFinance {
             etherRequired = etherRequired.add(claimDividends);
             
             // Set the initial buyout price.
-            identifierToBuyoutPrice[_deedId] = nextBuyoutPrice(unclaimedPlotPrice.add(claimDividends));
+            require(validBuyoutPrice(_deedId, _buyoutPrice));
+            identifierToBuyoutPrice[_deedId] = _buyoutPrice;
         }
         
         // Ensure enough ether is supplied.
