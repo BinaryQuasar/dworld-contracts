@@ -39,7 +39,7 @@ contract DWorldFinance is DWorldDeed {
     event ClaimDividend(address indexed from, address indexed to, uint256 deedIdFrom, uint256 indexed deedIdTo, uint256 dividend);
     
     /// @dev Event fired when a buyout is performed.
-    event Buyout(address indexed buyer, address indexed beneficiary, uint256 indexed deedId, uint256 winnings, uint256 totalCost, uint256 newPrice);
+    event Buyout(address indexed buyer, address indexed seller, uint256 indexed deedId, uint256 winnings, uint256 totalCost, uint256 newPrice);
     
     /// @dev Event fired when a dividend is paid for a buyout.
     event BuyoutDividend(address indexed from, address indexed to, uint256 deedIdFrom, uint256 indexed deedIdTo, uint256 dividend);
