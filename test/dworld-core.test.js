@@ -760,6 +760,18 @@ contract("DWorldCore", function(accounts) {
             await utils.assertRevert(core.setInitialBuyoutPrice(easternPlot, unclaimedPlotPrice.div(2), {from: user3}));
             await utils.assertRevert(core.setInitialBuyoutPrice(easternPlot, unclaimedPlotPrice.mul(50), {from: user3}));
         });
+        
+        it("correctly assigns the new buyout price", async function() {
+            await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(3))});
+            await core.buyout(easternPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(3))});
+            
+            let totalCost = initialBuyoutPrice.add(claimDividend.mul(3));
+            
+            assert.equal(
+                (await core.identifierToBuyoutPrice(easternPlot)).toNumber(),
+                (await core.nextBuyoutPrice(totalCost)).toNumber()
+            );
+        });
     });
     
     describe("Pausing", function() {
