@@ -462,6 +462,58 @@ contract("DWorldCore", function(accounts) {
         });
     });
     
+    describe("Setting dividend and fee percentages", function() {
+        before(deployContract);
+        before(mintDeeds);
+        before(async function setCFO() {
+            await core.setCFO(cfo, {from: owner});
+        });
+        
+        it("should prevent non-CFO from setting claim dividend", async function() {
+            await utils.assertRevert(core.setClaimDividendPercentage(5000, {from: owner}));
+            await utils.assertRevert(core.setClaimDividendPercentage(5000, {from: user1}));
+        });
+        
+        it("should prevent non-CFO from setting buyout dividend", async function() {
+            await utils.assertRevert(core.setBuyoutDividendPercentage(5000, {from: owner}));
+            await utils.assertRevert(core.setBuyoutDividendPercentage(5000, {from: user1}));
+        });
+        
+        it("should prevent non-CFO from setting buyout fee", async function() {
+            await utils.assertRevert(core.setBuyoutFeePercentage(5000, {from: owner}));
+            await utils.assertRevert(core.setBuyoutFeePercentage(5000, {from: user1}));
+        });
+        
+        it("should prevent CFO from from setting too low and too high claim dividend", async function() {
+            await utils.assertRevert(core.setClaimDividendPercentage(0, {from: cfo}));
+            await utils.assertRevert(core.setClaimDividendPercentage(10000000, {from: cfo}));
+        });
+        
+        it("should prevent CFO from from setting too low and too high buyout dividend", async function() {
+            await utils.assertRevert(core.setBuyoutDividendPercentage(0, {from: cfo}));
+            await utils.assertRevert(core.setBuyoutDividendPercentage(10000000, {from: cfo}));
+        });
+        
+        it("should prevent CFO from from setting too high buyout fee", async function() {
+            await utils.assertRevert(core.setBuyoutFeePercentage(6001, {from: cfo}));
+        });
+        
+        it("allows CFO to set the claim dividend", async function() {
+            await core.setClaimDividendPercentage(75000, {from: cfo});
+            assert.equal(await core.claimDividendPercentage(), 75000);
+        });
+        
+        it("allows CFO to set the buyout dividend", async function() {
+            await core.setBuyoutDividendPercentage(20000, {from: cfo});
+            assert.equal(await core.buyoutDividendPercentage(), 20000);
+        });
+        
+        it("allows CFO to set the buyout fee", async function() {
+            await core.setBuyoutFeePercentage(6000, {from: cfo});
+            assert.equal(await core.buyoutFeePercentage(), 6000);
+        });
+    });
+    
     describe("Pausing", function() {
         before(deployContract);
         before(mintDeeds);
