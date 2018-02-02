@@ -30,7 +30,7 @@ contract DWorldFinance is DWorldDeed {
     mapping (uint256 => uint256) initialPricePaid;
     
     /// Current plot price.
-    mapping (uint256 => uint256) identifierToBuyoutPrice;
+    mapping (uint256 => uint256) public identifierToBuyoutPrice;
     
     /// Boolean indicating whether the plot has been bought out at least once.
     mapping (uint256 => bool) identifierToBoughtOutOnce;
