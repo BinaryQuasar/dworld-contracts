@@ -26,6 +26,9 @@ contract DWorldFinance is DWorldDeed {
     /// Number of free claims per address.
     mapping (address => uint256) freeClaimAllowance;
     
+    /// Initial price paid for a plot.
+    mapping (uint256 => uint256) initialPricePaid;
+    
     /// Current plot price.
     mapping (uint256 => uint256) identifierToBuyoutPrice;
     
@@ -200,7 +203,7 @@ contract DWorldFinance is DWorldDeed {
         }
     }
     
-    /// @notice Get the buy out cost for a given plot.
+    /// @notice Get the buyout cost for a given plot.
     /// @param _deedId The identifier of the plot to get the buyout cost for.
     function buyoutCost(uint256 _deedId) external view returns (uint256) {
         // The current buyout price.
@@ -324,11 +327,10 @@ contract DWorldFinance is DWorldDeed {
         }
     }
     
-    /// @notice Test whether a buyout price is valid.
-    /// @param _deedId The identifier of the plot to test the buyout price for.
-    /// @param price The buyout price to test.
-    function validBuyoutPrice(uint256 _deedId, uint256 price) public view returns (bool) {
-        // The initial buyout price can only be set to 10x the unclaimed plot price
+    /// @notice Calculate the maximum initial buyout price for a plot.
+    /// @param _deedId The identifier of the plot to get the maximum initial buyout price for.
+    function maximumInitialBuyoutPrice(uint256 _deedId) public view returns (uint256) {
+        // The initial buyout price can only be set to 10x the initial plot price
         // (or 100x for the original pre-migration plots).
         uint256 mul = 10;
         
@@ -336,7 +338,14 @@ contract DWorldFinance is DWorldDeed {
             mul = 100;
         }
         
-        return (price >= unclaimedPlotPrice && price <= unclaimedPlotPrice.mul(mul));
+        return initialPricePaid[_deedId].mul(mul);
+    }
+    
+    /// @notice Test whether a buyout price is valid.
+    /// @param _deedId The identifier of the plot to test the buyout price for.
+    /// @param price The buyout price to test.
+    function validInitialBuyoutPrice(uint256 _deedId, uint256 price) public view returns (bool) {        
+        return (price >= unclaimedPlotPrice && price <= maximumInitialBuyoutPrice(_deedId));
     }
     
     /// @notice Manually set the initial buyout price of a plot.
@@ -350,7 +359,7 @@ contract DWorldFinance is DWorldDeed {
         require(!identifierToBoughtOutOnce[_deedId]);
         
         // The buyout price must be valid.
-        require(validBuyoutPrice(_deedId, price));
+        require(validInitialBuyoutPrice(_deedId, price));
         
         // Set the buyout price.
         identifierToBuyoutPrice[_deedId] = price;
