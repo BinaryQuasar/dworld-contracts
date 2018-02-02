@@ -16,6 +16,10 @@ contract("DWorldCore", function(accounts) {
     let gasPrice;
     let unclaimedPlotPrice;
     let initialBuyoutPrice;
+    let claimDividendPercentage;
+    let claimDividend;
+    let buyoutDividendPercentage;
+    let buyoutFeePercentage;
     let plotA = 3014702;
     let plotB = 3014703;
     let plotC = 3145774;
@@ -29,6 +33,13 @@ contract("DWorldCore", function(accounts) {
         gasPrice = new BigNumber(core.constructor.class_defaults.gasPrice);
         unclaimedPlotPrice = await core.unclaimedPlotPrice();
         initialBuyoutPrice = unclaimedPlotPrice.mul(2.5);
+        
+        claimDividendPercentage = (await core.claimDividendPercentage()).div(100000);
+        claimDividend = unclaimedPlotPrice.mul(claimDividendPercentage);
+        
+        buyoutDividendPercentage = (await core.buyoutDividendPercentage()).div(100000);
+        
+        buyoutFeePercentage = (await core.buyoutFeePercentage()).div(100000);
     }
     
     async function mintDeeds() {
@@ -511,6 +522,243 @@ contract("DWorldCore", function(accounts) {
         it("allows CFO to set the buyout fee", async function() {
             await core.setBuyoutFeePercentage(6000, {from: cfo});
             assert.equal(await core.buyoutFeePercentage(), 6000);
+        });
+    });
+    
+    describe("Claims and buyouts", async function() {
+        let plot1;
+        let plot2;
+        let plot3;
+        let plot4;
+        let plot5;
+        let plot6;
+        let plot7;
+        let plot8;
+        let centralPlot;
+        let easternPlot;
+        
+        beforeEach(deployContract);
+        beforeEach(mintDeeds);
+        beforeEach(async function claimShell() {
+            plot1 = await core.coordinateToIdentifier(41, 43);
+            plot2 = await core.coordinateToIdentifier(42, 43);
+            plot3 = await core.coordinateToIdentifier(43, 43);
+            plot4 = await core.coordinateToIdentifier(43, 42);
+            plot5 = await core.coordinateToIdentifier(43, 41);
+            plot6 = await core.coordinateToIdentifier(42, 41);
+            plot7 = await core.coordinateToIdentifier(41, 41);
+            plot8 = await core.coordinateToIdentifier(41, 42);
+            centralPlot = await core.coordinateToIdentifier(42, 42);
+            easternPlot = await core.coordinateToIdentifier(44, 42);
+            
+            await core.claimPlotMultiple([plot1, plot2, plot3, plot4], initialBuyoutPrice, {from: user1, value: unclaimedPlotPrice.mul(4)});
+            await core.claimPlotMultiple([plot5, plot6, plot7, plot8], initialBuyoutPrice, {from: user2, value: unclaimedPlotPrice.mul(4).add(claimDividend.mul(4))});
+            
+            /**************************/
+            /* State of plots after   */
+            /* minting:               */
+            /*                        */
+            /* ---------------------- */
+            /* |      |      |      | */
+            /* | User | User | User | */
+            /* |   1  |   1  |   1  | */
+            /* |------|------|------| */
+            /* | D: 2 |      |      | */
+            /* | User |      | User | */
+            /* |   2  |      |   1  | */
+            /* |------|------|------| */
+            /* |      | D: 1 | D: 1 | */
+            /* | User | User | User | */
+            /* |   2  |   2  |   2  | */
+            /* |------|------|------| */
+            /*                        */
+            /* User 2 has to pay a    */
+            /* total of 4 plots in    */
+            /* dividends to user 1.   */
+            /**************************/
+            
+        });
+        
+        it("assigns claim dividends correctly", async function() {            
+            await core.claimPlot(centralPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(8))});
+            assert.equal((await core.addressToEtherOwed(user1)).toNumber(), claimDividend.mul(4+4).toNumber());
+            assert.equal((await core.addressToEtherOwed(user2)).toNumber(), claimDividend.mul(4).toNumber());
+        });
+        
+        it("should prevent buying a plot out for less than the buyout price", async function() {
+            await core.claimPlot(centralPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(8))});
+            await utils.assertRevert(core.buyout(centralPlot, {from: user2, value: unclaimedPlotPrice}));
+        });
+        
+        it("allows buying out a plot for the asking price plus dividends", async function() {
+            await core.claimPlot(centralPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(8))});
+            await core.buyout(centralPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(8))});
+        });
+        
+        it("assigns buyout dividends correctly", async function() {
+            await core.claimPlot(centralPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(8))});
+            await core.buyout(centralPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(8))});
+            
+            // User3 should receive the buyout winnings.
+            assert.equal(
+                (await core.addressToEtherOwed(user3)).toNumber(),
+                initialBuyoutPrice.sub(initialBuyoutPrice.mul(buyoutDividendPercentage)).sub(initialBuyoutPrice.mul(buyoutFeePercentage))
+            );
+            
+            let variableDividend = initialBuyoutPrice.mul(buyoutDividendPercentage).div(8).floor();
+            
+            // User1 should receive dividends from claims by user2, the initial claim of the central plot, and the buyout dividends.
+            assert.equal((await core.addressToEtherOwed(user1)).toNumber(), claimDividend.mul(4+4+4).add(variableDividend.mul(4)).toNumber());
+            
+            // User2 should receive dividends from the initial claim of the central plot, and the buyout dividends.
+            assert.equal((await core.addressToEtherOwed(user2)).toNumber(), claimDividend.mul(4+4).add(variableDividend.mul(4)).toNumber());
+        });
+        
+        it("assigns buyout dividends correctly (if there is not an entire shell)", async function() {
+            await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(3))});
+            await core.buyout(easternPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(3))});
+            
+            // User3 should receive the buyout winnings.
+            assert.equal(
+                (await core.addressToEtherOwed(user3)).toNumber(),
+                initialBuyoutPrice.sub(initialBuyoutPrice.mul(buyoutDividendPercentage)).sub(initialBuyoutPrice.mul(buyoutFeePercentage)).toNumber()
+            );
+            
+            let variableDividend = initialBuyoutPrice.mul(buyoutDividendPercentage).div(3).floor();
+            
+            // User1 should receive dividends from claims by user2, the initial claim of the eastern plot, and the buyout dividends.
+            assert.equal((await core.addressToEtherOwed(user1)).toNumber(), claimDividend.mul(4+2+2).add(variableDividend.mul(2)).toNumber());
+            
+            // User2 should receive dividends from the initial claim of the eastern plot, and the buyout dividends.
+            assert.equal((await core.addressToEtherOwed(user2)).toNumber(), claimDividend.mul(1+1).add(variableDividend.mul(1)).toNumber());
+        });
+        
+        it("triggers events correctly", async function() {
+            let claimDividendWatcher = core.ClaimDividend();
+            
+            await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(8))});
+            
+            // Claim dividend events should be correct.
+            let claimDividendLogs = claimDividendWatcher.get();
+            assert.equal(claimDividendLogs.length, 3);
+            
+            // Plot 5
+            let claimDividendLog = claimDividendLogs[0].args;
+            assert.equal(claimDividendLog.from, user3);
+            assert.equal(claimDividendLog.to, user2);
+            assert.equal(claimDividendLog.deedIdFrom.toNumber(), easternPlot.toNumber());
+            assert.equal(claimDividendLog.deedIdTo.toNumber(), plot5.toNumber());
+            assert.equal(claimDividendLog.dividend.toNumber(), claimDividend.toNumber());
+            
+            // Plot 4
+            claimDividendLog = claimDividendLogs[1].args;
+            assert.equal(claimDividendLog.from, user3);
+            assert.equal(claimDividendLog.to, user1);
+            assert.equal(claimDividendLog.deedIdFrom.toNumber(), easternPlot.toNumber());
+            assert.equal(claimDividendLog.deedIdTo.toNumber(), plot4.toNumber());
+            assert.equal(claimDividendLog.dividend.toNumber(), claimDividend.toNumber());
+            
+            // Plot 3
+            claimDividendLog = claimDividendLogs[2].args;
+            assert.equal(claimDividendLog.from, user3);
+            assert.equal(claimDividendLog.to, user1);
+            assert.equal(claimDividendLog.deedIdFrom.toNumber(), easternPlot.toNumber());
+            assert.equal(claimDividendLog.deedIdTo.toNumber(), plot3.toNumber());
+            assert.equal(claimDividendLog.dividend.toNumber(), claimDividend.toNumber());
+            
+            let buyoutWatcher = core.Buyout();
+            let buyoutDividendWatcher = core.BuyoutDividend();
+            let setDataWatcher = core.SetData();
+            
+            await core.buyoutWithData(easternPlot, "TestName", "TestDescription", "ImageUrl", "InfoUrl", {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(3))});
+            
+            let totalCost = initialBuyoutPrice.add(claimDividend.mul(3));
+            let totalDividendPerPlot = claimDividend.add(initialBuyoutPrice.mul(buyoutDividendPercentage).div(3));
+            
+            // Buyout event should be correct.
+            let buyoutLogs = buyoutWatcher.get();
+            assert.equal(buyoutLogs.length, 1);
+            
+            let buyoutLog = buyoutLogs[0].args;
+            assert.equal(buyoutLog.buyer, user2);
+            assert.equal(buyoutLog.seller, user3);
+            assert.equal(buyoutLog.deedId.toNumber(), easternPlot.toNumber());
+            assert.equal(
+                buyoutLog.winnings.toNumber(),
+                initialBuyoutPrice.sub(initialBuyoutPrice.mul(buyoutDividendPercentage)).sub(initialBuyoutPrice.mul(buyoutFeePercentage)).toNumber());
+            assert.equal(
+                buyoutLog.totalCost.toNumber(),
+                totalCost.toNumber()
+            );
+            assert.equal(
+                buyoutLog.newPrice.toNumber(),
+                (await core.nextBuyoutPrice(totalCost)).toNumber()
+            );
+            
+            // Buyout dividend events should be correct.
+            let buyoutDividendLogs = buyoutDividendWatcher.get();
+            assert.equal(buyoutDividendLogs.length, 3);
+            
+            // Plot 5
+            let buyoutDividendLog = buyoutDividendLogs[0].args;
+            assert.equal(buyoutDividendLog.from, user2);
+            assert.equal(buyoutDividendLog.to, user2);
+            assert.equal(buyoutDividendLog.deedIdFrom.toNumber(), easternPlot.toNumber());
+            assert.equal(buyoutDividendLog.deedIdTo.toNumber(), plot5.toNumber());
+            assert.equal(buyoutDividendLog.dividend.toNumber(), totalDividendPerPlot.toNumber());
+            
+            // Plot 4
+            buyoutDividendLog = buyoutDividendLogs[1].args;
+            assert.equal(buyoutDividendLog.from, user2);
+            assert.equal(buyoutDividendLog.to, user1);
+            assert.equal(buyoutDividendLog.deedIdFrom.toNumber(), easternPlot.toNumber());
+            assert.equal(buyoutDividendLog.deedIdTo.toNumber(), plot4.toNumber());
+            assert.equal(buyoutDividendLog.dividend.toNumber(), totalDividendPerPlot.toNumber());
+            
+            // Plot 3
+            buyoutDividendLog = buyoutDividendLogs[2].args;
+            assert.equal(buyoutDividendLog.from, user2);
+            assert.equal(buyoutDividendLog.to, user1);
+            assert.equal(buyoutDividendLog.deedIdFrom.toNumber(), easternPlot.toNumber());
+            assert.equal(buyoutDividendLog.deedIdTo.toNumber(), plot3.toNumber());
+            assert.equal(buyoutDividendLog.dividend.toNumber(), totalDividendPerPlot.toNumber());
+            
+            // Plot data event should be correct.
+            let setDataLogs = await setDataWatcher.get();
+            assert.equal(setDataLogs.length, 1);
+            
+            let setDataLog = setDataLogs[0].args;
+            assert.equal(setDataLog.deedId, easternPlot.toNumber());
+            assert.equal(setDataLog.name, "TestName");
+            assert.equal(setDataLog.description, "TestDescription");
+            assert.equal(setDataLog.imageUrl, 'ImageUrl');
+            assert.equal(setDataLog.infoUrl, 'InfoUrl');
+        });
+        
+        it("should prevent non-owner from updating the initial buyout price", async function() {
+            await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(3))});
+            await utils.assertRevert(core.setInitialBuyoutPrice(easternPlot, unclaimedPlotPrice.mul(4), {from: user1}));
+        });
+        
+        it("should prevent updating initial buyout price after plot has been bought out once", async function() {
+            await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(3))});
+            await core.buyout(easternPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(3))});
+            
+            await utils.assertRevert(core.setInitialBuyoutPrice(easternPlot, unclaimedPlotPrice.mul(4), {from: user2}));
+        });
+        
+        it("allows setting the initial buy out price if the plot has not been bought out before", async function() {
+            await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(3))});
+            
+            await core.setInitialBuyoutPrice(easternPlot, unclaimedPlotPrice.mul(4), {from: user3});
+            assert.equal((await core.identifierToBuyoutPrice(easternPlot)).toNumber(), unclaimedPlotPrice.mul(4).toNumber());
+        });
+        
+        it("should prevent setting the initial buyout price too low or too high", async function() {
+            await core.claimPlot(easternPlot, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice.add(claimDividend.mul(3))});
+            
+            await utils.assertRevert(core.setInitialBuyoutPrice(easternPlot, unclaimedPlotPrice.div(2), {from: user3}));
+            await utils.assertRevert(core.setInitialBuyoutPrice(easternPlot, unclaimedPlotPrice.mul(50), {from: user3}));
         });
     });
     
