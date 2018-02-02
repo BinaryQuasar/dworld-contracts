@@ -2,19 +2,34 @@ pragma solidity ^0.4.18;
 
 import "./DWorldMinting.sol";
 import "./OriginalDWorldDeed.sol";
+import "./auction/ClockAuction.sol";
 
 /// @dev Migrate original data from the old contract.
 contract DWorldUpgrade is DWorldMinting {
-    function DWorldUpgrade(address originalContractAddress) public {
+    function DWorldUpgrade(
+        address originalContractAddress,
+        address originalSaleAuctionAddress,
+        address originalRentAuctionAddress
+    )
+        public
+    {
         if (originalContractAddress != 0) {
-            _migrate(originalContractAddress);
+            _migrate(originalContractAddress, originalSaleAuctionAddress, originalRentAuctionAddress);
         }
     }
     
     /// @dev Migrate data from the original contract.
     /// @param originalContractAddress The address of the original contract.
-    function _migrate(address originalContractAddress) internal {
+    function _migrate(
+        address originalContractAddress,
+        address originalSaleAuctionAddress,
+        address originalRentAuctionAddress
+    )
+        internal
+    {
         OriginalDWorldDeed originalContract = OriginalDWorldDeed(originalContractAddress);
+        ClockAuction originalSaleAuction = ClockAuction(originalSaleAuctionAddress);
+        ClockAuction originalRentAuction = ClockAuction(originalRentAuctionAddress);
         
         // Copy original plots.
         uint256 numPlots = originalContract.countOfDeeds();
@@ -33,6 +48,15 @@ contract DWorldUpgrade is DWorldMinting {
             
             // Get the original owner and transfer.
             address owner = identifierToOwner[_deedId];
+            
+            if (owner == originalSaleAuctionAddress) {
+                var (seller, ) = originalSaleAuction.getAuction(_deedId);
+                owner = seller;
+            } else if (owner == originalRentAuctionAddress) {
+                (seller, ) = originalRentAuction.getAuction(_deedId);
+                owner = seller;
+            }
+            
             _transfer(address(0), owner, _deedId);
             
             // Set the initial price paid for the plot.

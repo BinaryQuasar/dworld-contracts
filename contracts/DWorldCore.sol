@@ -8,7 +8,15 @@ contract DWorldCore is DWorldUpgrade {
     address public upgradedContractAddress;
     event ContractUpgrade(address upgradedContractAddress);
 
-    function DWorldCore(address originalContractAddress, uint256 buyoutsEnabledAfterHours) DWorldUpgrade(originalContractAddress) public {
+    function DWorldCore(
+        address originalContractAddress,
+        address originalSaleAuctionAddress,
+        address originalRentAuctionAddress,
+        uint256 buyoutsEnabledAfterHours
+    )
+        DWorldUpgrade(originalContractAddress, originalSaleAuctionAddress, originalRentAuctionAddress)
+        public 
+    {
         buyoutsEnabledFromTimestamp = block.timestamp + buyoutsEnabledAfterHours * 3600;
     }
     
