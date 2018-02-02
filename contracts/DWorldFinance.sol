@@ -357,7 +357,7 @@ contract DWorldFinance is DWorldDeed {
     /// @notice Manually set the initial buyout price of a plot.
     /// @param _deedId The identifier of the plot to set the buyout price for.
     /// @param price The value to set the buyout price to.
-    function setInitialBuyoutPrice(uint256 _deedId, uint256 price) external whenNotPaused {
+    function setInitialBuyoutPrice(uint256 _deedId, uint256 price) public whenNotPaused {
         // One can only set the buyout price of their own plots.
         require(_owns(msg.sender, _deedId));
         

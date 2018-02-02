@@ -96,9 +96,8 @@ contract DWorldMinting is DWorldFinance {
             // Set the initial price paid for the plot.
             initialPricePaid[_deedId] = unclaimedPlotPrice.add(claimDividends);
             
-            // Set the initial buyout price.
-            require(validInitialBuyoutPrice(_deedId, _buyoutPrice));
-            identifierToBuyoutPrice[_deedId] = _buyoutPrice;
+            // Set the initial buyout price. Throws if it does not succeed.
+            setInitialBuyoutPrice(_deedId, _buyoutPrice);
         }
         
         // Ensure enough ether is supplied.
