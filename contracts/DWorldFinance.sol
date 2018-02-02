@@ -260,17 +260,23 @@ contract DWorldFinance is DWorldDeed {
         uint256 flatDividends = claimDividend().mul(claimedSurroundingPlots.length);
         totalCost = price.add(flatDividends);
         
-        // Calculate the variable dividends based on the buyout price.
+        // Calculate the variable dividends based on the buyout price
+        // (only to be paid if there are surrounding plots).
         uint256 variableDividends = price.mul(buyoutDividendPercentage).div(100000);
         
         // Calculate fees.
         uint256 fee = price.mul(buyoutFeePercentage).div(100000);
         
         // Calculate and assign buyout proceeds.
-        uint256 currentOwnerWinnings = price.sub(variableDividends).sub(fee);
+        uint256 currentOwnerWinnings = price.sub(fee);
         
         uint256 totalDividendPerBeneficiary;
         if (claimedSurroundingPlots.length > 0) {
+            // If there are surrounding plots, variable dividend is to be paid
+            // based on the buyout price..
+            currentOwnerWinnings = currentOwnerWinnings.sub(variableDividends);
+            
+            // Calculate the dividend per surrounding plot.
             totalDividendPerBeneficiary = flatDividends.add(variableDividends) / claimedSurroundingPlots.length;
         }
         
