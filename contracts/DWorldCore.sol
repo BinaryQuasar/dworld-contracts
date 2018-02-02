@@ -1,13 +1,15 @@
 pragma solidity ^0.4.18;
 
-import "./DWorldMinting.sol";
+import "./DWorldUpgrade.sol";
 
 /// @dev Implements highest-level DWorld functionality.
-contract DWorldCore is DWorldMinting {
+contract DWorldCore is DWorldUpgrade {
     /// If this contract is broken, this will be used to publish the address at which an upgraded contract can be found
     address public upgradedContractAddress;
     event ContractUpgrade(address upgradedContractAddress);
 
+    function DWorldCore(address originalContractAddress) DWorldUpgrade(originalContractAddress) public {}
+    
     /// @notice Only to be used when this contract is significantly broken,
     /// and an upgrade is required.
     function setUpgradedContractAddress(address _upgradedContractAddress) external onlyOwner whenPaused {
