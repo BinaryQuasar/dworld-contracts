@@ -48,7 +48,7 @@ contract DWorldFinance is DWorldDeed {
     event SetBuyoutPrice(uint256 indexed deedId, uint256 newPrice);
     
     /// @dev The time after which buyouts will be enabled. Set in the DWorldCore constructor.
-    uint256 buyoutsEnabledFromTimestamp;
+    uint256 public buyoutsEnabledFromTimestamp;
     
     /// @notice Sets the new price for unclaimed plots.
     /// @param _unclaimedPlotPrice The new price for unclaimed plots.
