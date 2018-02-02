@@ -47,10 +47,13 @@ contract DWorldUpgrade is DWorldMinting {
             plots[i] = _deedId;
             
             // Get the original owner and transfer.
-            address owner = identifierToOwner[_deedId];
+            address owner = originalContract.ownerOf(_deedId);
             
+            // If the owner of the plot is an auction contract,
+            // get the actual owner of the plot.
+            address seller;
             if (owner == originalSaleAuctionAddress) {
-                var (seller, ) = originalSaleAuction.getAuction(_deedId);
+                (seller, ) = originalSaleAuction.getAuction(_deedId);
                 owner = seller;
             } else if (owner == originalRentAuctionAddress) {
                 (seller, ) = originalRentAuction.getAuction(_deedId);
