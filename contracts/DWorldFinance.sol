@@ -52,7 +52,7 @@ contract DWorldFinance is DWorldDeed {
     
     /// @notice Sets the new dividend percentage for unclaimed plots.
     /// @param _claimDividendPercentage The new dividend percentage for unclaimed plots.
-    function setDividendPercentage(uint256 _claimDividendPercentage) external onlyCFO {
+    function setClaimDividendPercentage(uint256 _claimDividendPercentage) external onlyCFO {
         // Claim dividend percentage may be 100% at the most.
         require(0 <= _claimDividendPercentage && _claimDividendPercentage <= 100000);
         
