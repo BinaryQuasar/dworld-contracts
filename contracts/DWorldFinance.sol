@@ -268,7 +268,12 @@ contract DWorldFinance is DWorldDeed {
         
         // Calculate and assign buyout proceeds.
         uint256 currentOwnerWinnings = price.sub(variableDividends).sub(fee);
-        uint256 totalDividendPerBeneficiary = flatDividends.add(variableDividends) / claimedSurroundingPlots.length;
+        
+        uint256 totalDividendPerBeneficiary;
+        if (claimedSurroundingPlots.length > 0) {
+            totalDividendPerBeneficiary = flatDividends.add(variableDividends) / claimedSurroundingPlots.length;
+        }
+        
         _assignBuyoutProceeds(
             currentOwner,
             _deedId,
