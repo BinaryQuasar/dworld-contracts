@@ -3,11 +3,11 @@ pragma solidity ^0.4.18;
 import "./DWorldDeed.sol";
 
 /// @dev Holds functionality for finance related to plots.
-contract DWorldFinance is DWorldDeed {    
-    /// Total amount of ether yet to be paid to auction beneficiaries.
+contract DWorldFinance is DWorldDeed {
+    /// Total amount of Ether yet to be paid to auction beneficiaries.
     uint256 public outstandingEther = 0 ether;
     
-    /// Amount of ether yet to be paid per beneficiary.
+    /// Amount of Ether yet to be paid per beneficiary.
     mapping (address => uint256) public addressToEtherOwed;
     
     /// Base price for unclaimed plots.
@@ -315,13 +315,13 @@ contract DWorldFinance is DWorldDeed {
             identifierToBoughtOutOnce[_deedId] = true;
         }
         
-        // Calculate the excess ether sent.
+        // Calculate the excess Ether sent.
         // msg.value is greater than or equal to totalCost,
         // so this cannot underflow.
         uint256 excess = msg.value - totalCost;
         
         if (excess > 0) {
-            // Refund any excess ether (not susceptible to re-entry attack, as
+            // Refund any excess Ether (not susceptible to re-entry attack, as
             // the owner is assigned before the transfer takes place).
             msg.sender.transfer(excess);
         }
