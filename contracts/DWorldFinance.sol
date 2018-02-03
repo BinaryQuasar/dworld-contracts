@@ -197,8 +197,10 @@ contract DWorldFinance is DWorldDeed {
     /// @dev Calculate the next buyout price given the current total buyout cost.
     /// @param totalCost The current total buyout cost.
     function nextBuyoutPrice(uint256 totalCost) public pure returns (uint256) {
-        if (totalCost < 0.2 ether) {
+        if (totalCost < 0.05 ether) {
             return totalCost * 2;
+        } else if (totalCost < 0.2 ether) {
+            return totalCost * 170 / 100; // * 1.7
         } else if (totalCost < 0.5 ether) {
             return totalCost * 150 / 100; // * 1.5
         } else {
@@ -347,9 +349,9 @@ contract DWorldFinance is DWorldDeed {
     /// @notice Calculate the maximum initial buyout price for a plot.
     /// @param _deedId The identifier of the plot to get the maximum initial buyout price for.
     function maximumInitialBuyoutPrice(uint256 _deedId) public view returns (uint256) {
-        // The initial buyout price can only be set to 10x the initial plot price
+        // The initial buyout price can be set to 4x the initial plot price
         // (or 100x for the original pre-migration plots).
-        uint256 mul = 10;
+        uint256 mul = 4;
         
         if (identifierIsOriginal[_deedId]) {
             mul = 100;
