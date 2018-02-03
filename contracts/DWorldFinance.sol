@@ -114,7 +114,7 @@ contract DWorldFinance is DWorldDeed {
     
     /// @dev Find the _claimed_ plots surrounding a plot.
     /// @param _deedId The identifier of the plot to get the surrounding plots for.
-    function _claimedSurroundingPlots(uint256 _deedId) internal view returns (uint256[]) {
+    function _claimedSurroundingPlots(uint256 _deedId) internal view returns (uint256[] memory) {
         var (x, y) = identifierToCoordinate(_deedId);
         
         // Find all claimed surrounding plots.
