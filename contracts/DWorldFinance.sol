@@ -35,13 +35,13 @@ contract DWorldFinance is DWorldDeed {
     /// Boolean indicating whether the plot has been bought out at least once.
     mapping (uint256 => bool) identifierToBoughtOutOnce;
     
-    /// @dev Event fired when a dividend is paid for a new plot claim.
+    /// @dev Event fired when dividend is paid for a new plot claim.
     event ClaimDividend(address indexed from, address indexed to, uint256 deedIdFrom, uint256 indexed deedIdTo, uint256 dividend);
     
     /// @dev Event fired when a buyout is performed.
     event Buyout(address indexed buyer, address indexed seller, uint256 indexed deedId, uint256 winnings, uint256 totalCost, uint256 newPrice);
     
-    /// @dev Event fired when a dividend is paid for a buyout.
+    /// @dev Event fired when dividend is paid for a buyout.
     event BuyoutDividend(address indexed from, address indexed to, uint256 deedIdFrom, uint256 indexed deedIdTo, uint256 dividend);
     
     /// @dev Event fired when the buyout price is manually changed for a plot.
