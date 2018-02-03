@@ -634,6 +634,13 @@ contract("DWorldCore", function(accounts) {
             await core.buyout(centralPlot, {from: user2, value: initialBuyoutPrice.add(claimDividend.mul(8))});
         });
         
+        it("allows buying out a plot for the asking price if there are no flat dividends to be paid", async function() {
+            await enableBuyouts();
+            
+            await core.claimPlot(5000, initialBuyoutPrice, {from: user3, value: unclaimedPlotPrice});
+            await core.buyout(5000, {from: user2, value: initialBuyoutPrice});
+        });
+        
         it("assigns buyout dividends correctly", async function() {
             await enableBuyouts();
             
