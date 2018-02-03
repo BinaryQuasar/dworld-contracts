@@ -527,13 +527,13 @@ contract("DWorldCore", function(accounts) {
         });
         
         it("allows CFO to set the buyout dividend", async function() {
-            await core.setBuyoutDividendPercentage(20000, {from: cfo});
-            assert.equal(await core.buyoutDividendPercentage(), 20000);
+            await core.setBuyoutDividendPercentage(12500, {from: cfo});
+            assert.equal(await core.buyoutDividendPercentage(), 12500);
         });
         
         it("allows CFO to set the buyout fee", async function() {
-            await core.setBuyoutFeePercentage(6000, {from: cfo});
-            assert.equal(await core.buyoutFeePercentage(), 6000);
+            await core.setBuyoutFeePercentage(5000, {from: cfo});
+            assert.equal(await core.buyoutFeePercentage(), 5000);
         });
     });
     

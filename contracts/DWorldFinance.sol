@@ -70,8 +70,8 @@ contract DWorldFinance is DWorldDeed {
     /// @param _buyoutDividendPercentage The new dividend percentage for buyouts.
     function setBuyoutDividendPercentage(uint256 _buyoutDividendPercentage) external onlyCFO {
         // Buyout dividend must be 2% at the least.
-        // Buyout dividend percentage may be 20% at the most.
-        require(2000 <= _buyoutDividendPercentage && _buyoutDividendPercentage <= 20000);
+        // Buyout dividend percentage may be 12.5% at the most.
+        require(2000 <= _buyoutDividendPercentage && _buyoutDividendPercentage <= 12500);
         
         buyoutDividendPercentage = _buyoutDividendPercentage;
     }
@@ -79,8 +79,8 @@ contract DWorldFinance is DWorldDeed {
     /// @notice Sets the new fee percentage for buyouts.
     /// @param _buyoutFeePercentage The new fee percentage for buyouts.
     function setBuyoutFeePercentage(uint256 _buyoutFeePercentage) external onlyCFO {
-        // Buyout fee may be 6% at the most.
-        require(0 <= _buyoutFeePercentage && _buyoutFeePercentage <= 6000);
+        // Buyout fee may be 5% at the most.
+        require(0 <= _buyoutFeePercentage && _buyoutFeePercentage <= 5000);
         
         buyoutFeePercentage = _buyoutFeePercentage;
     }
