@@ -110,5 +110,4 @@ contract DWorldUpgrade is DWorldMinting {
             migrationFinished = true;
         }
     }
-    
 }
