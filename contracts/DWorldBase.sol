@@ -21,7 +21,7 @@ contract DWorldBase is DWorldAccessControl {
     mapping (address => uint256) ownershipDeedCount;
     
     // Boolean indicating whether the plot was bought before the migration.
-    mapping (uint256 => bool) identifierIsOriginal;
+    mapping (uint256 => bool) public identifierIsOriginal;
     
     /// @dev Event fired when a plot's data are changed. The plot
     /// data are not stored in the contract directly, instead the
