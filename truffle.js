@@ -15,8 +15,8 @@ module.exports = {
         return new HDWalletProvider(config.mnemonic, config.mainnetProvider);
       },
       network_id: '1',
-      gas: 4295748,
-      gasPrice: 1500000000, // 1.5 gwei
+      gas: 4508012,
+      gasPrice: 4500000000, // 4.5 gwei
     },
   },
   solc: {
