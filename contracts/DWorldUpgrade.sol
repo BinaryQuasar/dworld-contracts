@@ -93,7 +93,7 @@ contract DWorldUpgrade is DWorldMinting {
             initialPricePaid[_deedId] = 0.0125 ether;
             
             // The initial buyout price.
-            uint256 _initialBuyoutPrice = 0.075 ether;
+            uint256 _initialBuyoutPrice = 0.050 ether;
             
             // Set the initial buyout price.
             identifierToBuyoutPrice[_deedId] = _initialBuyoutPrice;
@@ -105,8 +105,10 @@ contract DWorldUpgrade is DWorldMinting {
             identifierIsOriginal[_deedId] = true;
         }
         
+        migrationNumPlotsTransferred += i;
+        
         // Finished migration.
-        if (i == numPlots - 1) {
+        if (i == numPlots) {
             migrationFinished = true;
         }
     }
