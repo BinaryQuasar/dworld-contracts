@@ -6,6 +6,16 @@ import "./auction/ClockAuction.sol";
 
 /// @dev Migrate original data from the old contract.
 contract DWorldUpgrade is DWorldMinting {
+    OriginalDWorldDeed originalContract;
+    ClockAuction originalSaleAuction;
+    ClockAuction originalRentAuction;
+    
+    /// @notice Keep track of whether we have finished migrating.
+    bool public migrationFinished = false;
+    
+    /// @dev Keep track of how many plots have been transferred so far.
+    uint256 migrationNumPlotsTransferred = 0;
+    
     function DWorldUpgrade(
         address originalContractAddress,
         address originalSaleAuctionAddress,
@@ -14,33 +24,50 @@ contract DWorldUpgrade is DWorldMinting {
         public
     {
         if (originalContractAddress != 0) {
-            _migrate(originalContractAddress, originalSaleAuctionAddress, originalRentAuctionAddress);
+            _startMigration(originalContractAddress, originalSaleAuctionAddress, originalRentAuctionAddress);
+        } else {
+            migrationFinished = true;
         }
     }
     
-    /// @dev Migrate data from the original contract.
+    /// @dev Migrate data from the original contract. Assumes the original
+    /// contract is paused, and remains paused for the duration of the
+    /// migration.
     /// @param originalContractAddress The address of the original contract.
-    function _migrate(
+    function _startMigration(
         address originalContractAddress,
         address originalSaleAuctionAddress,
         address originalRentAuctionAddress
     )
         internal
     {
-        OriginalDWorldDeed originalContract = OriginalDWorldDeed(originalContractAddress);
-        ClockAuction originalSaleAuction = ClockAuction(originalSaleAuctionAddress);
-        ClockAuction originalRentAuction = ClockAuction(originalRentAuctionAddress);
+        // Set contracts.
+        originalContract = OriginalDWorldDeed(originalContractAddress);
+        originalSaleAuction = ClockAuction(originalSaleAuctionAddress);
+        originalRentAuction = ClockAuction(originalRentAuctionAddress);
         
-        // Copy original plots.
+        // Start paused.
+        paused = true;
+        
+        // Get count of original plots.
         uint256 numPlots = originalContract.countOfDeeds();
         
         // Allocate storage for the plots array (this is more
         // efficient than .push-ing each individual plot, as
         // that requires multiple dynamic allocations).
         plots.length = numPlots;
-        
+    }
+    
+    function migrationStep(uint256 numPlotsTransfer) onlyOwner whenPaused {
+        // Migration must not be finished yet.
+        require(!migrationFinished);
+    
+        // Get count of original plots.
+        uint256 numPlots = originalContract.countOfDeeds();
+    
         // Loop through plots and assign to original owner.
-        for (uint256 i = 0; i < numPlots; i++) {
+        uint256 i;
+        for (i = migrationNumPlotsTransferred; i < numPlots && i < migrationNumPlotsTransferred + numPlotsTransfer; i++) {
             uint32 _deedId = originalContract.plots(i);
             
             // Set plot.
@@ -52,10 +79,10 @@ contract DWorldUpgrade is DWorldMinting {
             // If the owner of the plot is an auction contract,
             // get the actual owner of the plot.
             address seller;
-            if (owner == originalSaleAuctionAddress) {
+            if (owner == address(originalSaleAuction)) {
                 (seller, ) = originalSaleAuction.getAuction(_deedId);
                 owner = seller;
-            } else if (owner == originalRentAuctionAddress) {
+            } else if (owner == address(originalRentAuction)) {
                 (seller, ) = originalRentAuction.getAuction(_deedId);
                 owner = seller;
             }
@@ -77,5 +104,11 @@ contract DWorldUpgrade is DWorldMinting {
             // Mark the plot as being an original.
             identifierIsOriginal[_deedId] = true;
         }
+        
+        // Finished migration.
+        if (i == numPlots - 1) {
+            migrationFinished = true;
+        }
     }
+    
 }
