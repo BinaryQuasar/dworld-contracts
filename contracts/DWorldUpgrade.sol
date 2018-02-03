@@ -58,7 +58,7 @@ contract DWorldUpgrade is DWorldMinting {
         plots.length = numPlots;
     }
     
-    function migrationStep(uint256 numPlotsTransfer) onlyOwner whenPaused {
+    function migrationStep(uint256 numPlotsTransfer) external onlyOwner whenPaused {
         // Migration must not be finished yet.
         require(!migrationFinished);
     
