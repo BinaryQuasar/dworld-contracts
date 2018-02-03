@@ -105,7 +105,7 @@ contract DWorldUpgrade is DWorldMinting {
             identifierIsOriginal[_deedId] = true;
         }
         
-        migrationNumPlotsTransferred += i;
+        migrationNumPlotsTransferred += numPlotsTransfer;
         
         // Finished migration.
         if (i == numPlots) {
